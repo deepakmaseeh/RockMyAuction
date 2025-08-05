@@ -178,15 +178,16 @@ export default function HomePage() {
       </section>
 
       {/* Discover More call-to-action */}
+
       <section className="max-w-5xl mx-auto mt-12 px-6">
         <div className="bg-orange-500 text-center text-white text-xl rounded-2xl py-8 font-semibold shadow">
           Ready to find your next gem?  
-          <a
+          <Link
             href="/auctions"
             className="ml-4 inline-block bg-[#18181B] hover:bg-orange-700 text-orange-300 rounded px-6 py-2 font-bold transition"
           >
             Discover All Live Auctions →
-          </a>
+          </Link>
         </div>
       </section>
       
@@ -196,7 +197,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="py-8 mt-10 text-center text-gray-400 text-sm">
         <Footer/> 
-        {/* Made with <a href="https://www.visily.ai/" target="_blank" className="text-blue-400 underline">Visily</a> */}
+       
       </footer>
     </div>
   );

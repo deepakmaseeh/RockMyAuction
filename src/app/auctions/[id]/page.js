@@ -277,7 +277,7 @@ function BidForm({ auction, onBidSubmit }) {
             </span>
           </label>
           <p className="text-xs text-gray-400 mt-1 ml-7">
-            We'll bid on your behalf up to your maximum amount
+            We&apos;ll bid on your behalf up to your maximum amount
           </p>
         </div>
 

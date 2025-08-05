@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="bg-[#121212] text-gray-300 pt-10 pb-6 px-4 sm:px-10">
@@ -14,10 +16,10 @@ export default function Footer() {
         <div>
           <h3 className="font-semibold text-white mb-3">Quick Links</h3>
           <ul className="space-y-2 text-sm">
-            <li><a href="/auctions" className="hover:underline">Live Auctions</a></li>
-            <li><a href="/dashboard" className="hover:underline">Dashboard</a></li>
-            <li><a href="/auth/login" className="hover:underline">Login</a></li>
-            <li><a href="/auth/register" className="hover:underline">Register</a></li>
+            <li><Link href="/auctions" className="hover:underline">Live Auctions</Link></li>
+            <li><Link href="/dashboard" className="hover:underline">Dashboard</Link></li>
+            <li><Link href="/auth/login" className="hover:underline">Login</Link></li>
+            <li><Link href="/auth/register" className="hover:underline">Register</Link></li>
           </ul>
         </div>
 
@@ -25,10 +27,10 @@ export default function Footer() {
         <div>
           <h3 className="font-semibold text-white mb-3">Popular Categories</h3>
           <ul className="space-y-2 text-sm">
-            <li><a href="#" className="hover:underline">Luxury Watches</a></li>
-            <li><a href="#" className="hover:underline">Sneakers</a></li>
-            <li><a href="#" className="hover:underline">Vintage Art</a></li>
-            <li><a href="#" className="hover:underline">Rare Comics</a></li>
+            <li><Link href="#" className="hover:underline">Luxury Watches</Link></li>
+            <li><Link href="#" className="hover:underline">Sneakers</Link></li>
+            <li><Link href="#" className="hover:underline">Vintage Art</Link></li>
+            <li><Link href="#" className="hover:underline">Rare Comics</Link></li>
           </ul>
         </div>
 
