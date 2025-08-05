@@ -125,8 +125,7 @@ export default function ProfilePage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="text-2xl font-bold text-orange-500 flex items-center gap-2">
-              <span>🏺</span>
-              Rock the Auction
+              <span><img src="/RMA-Logo.png" alt="Logo" className="w-35 content-center" />  </span>
             </Link>
             <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition">
               ← Back to Dashboard
