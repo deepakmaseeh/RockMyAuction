@@ -7,7 +7,7 @@ export async function POST(req) {
   }
 
   // DEMO: Only allow these credentials
-  if (email === "test@example.com" && password === "password123") {
+  if (email === "demo@example.com" && password === "password") {
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   }
 
