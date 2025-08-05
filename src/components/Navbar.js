@@ -9,8 +9,13 @@ export default function Navbar() {
       <ul className="flex gap-8 text-white text-base font-medium">
         <li><Link href="/" className="hover:text-orange-400 transition">Home</Link></li>
         <li><Link href="/dashboard" className="hover:text-orange-400 transition">Dashboard</Link></li>
-        <li><Link href="/auctions" className="hover:text-orange-400 transition">Auction</Link></li>
+        {/* <li><Link href="/auctions" className="hover:text-orange-400 transition">Auction</Link></li> */}
+        <Link href="/auctions" className="hover:text-orange-400 transition">
+  Auctions
+</Link>
         <li><Link href="/about" className="hover:text-orange-400 transition">About</Link></li>
+        {/* <li><Link href="/about" className="hover:text-orange-400 transition">About</Link></li> */}
+
         <li><Link href="/help-center" className="hover:text-orange-400 transition">Help</Link></li>
         <li><Link href="/user" className="hover:text-orange-400 transition">User</Link></li>
         {/* <li><Link href="/new-auction" className="hover:text-orange-400 transition">new-auction</Link></li> */}

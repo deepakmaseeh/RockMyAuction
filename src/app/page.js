@@ -189,7 +189,10 @@ export default function HomePage() {
           </a>
         </div>
       </section>
-
+      
+        
+          
+          
       {/* Footer */}
       <footer className="py-8 mt-10 text-center text-gray-400 text-sm">
         <Footer/> 
