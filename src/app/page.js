@@ -60,6 +60,7 @@ import AuctionCard from "@/components/AuctionCard"
 import CategoryCard from "@/components/CategoryCard"
 import Footer from "@/components/Footer"
 
+
 const liveAuctions = [
   {
     image: "/assets/carren-blue.png", // Place images in /public
@@ -190,9 +191,8 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
-      
-        
-          
+
+
           
       {/* Footer */}
       <footer className="py-8 mt-10 text-center text-gray-400 text-sm">
