@@ -11,7 +11,7 @@ export default function TestimonialCard({ name, role, text, location }) {
         </div>
       </div>
       <p className="text-gray-300 text-sm mb-4 leading-relaxed flex-1">
-        "{text}"
+        {text}
       </p>
       <div className="text-xs text-orange-400 font-medium mt-auto">
         {location}
