@@ -22,7 +22,8 @@ export function middleware(request) {
      '/seller/analytics',
      '/seller/active-auctions',
     '/profile',  
-    '/admin'  // ← ADD THIS LINE to make new auction page public
+    '/admin',
+    '/settings'  // ← ADD THIS LINE to make new auction page public
   ]
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
   
@@ -30,7 +31,7 @@ export function middleware(request) {
   const protectedPaths = [
     '/buyer', 
     // '/profile', 
-    '/settings',
+    // '/settings',
     '/messages'
   ]
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))

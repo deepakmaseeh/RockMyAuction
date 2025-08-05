@@ -139,7 +139,7 @@ export default function Sidebar() {
           </div>
         </div>
         
-        <Link href="/help" className="block text-center text-orange-400 hover:text-orange-300 text-sm font-medium mt-4 transition">
+        <Link href="/help-center" className="block text-center text-orange-400 hover:text-orange-300 text-sm font-medium mt-4 transition">
           Need Help? Contact Support →
         </Link>
       </div>
