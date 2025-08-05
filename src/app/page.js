@@ -125,24 +125,25 @@ export default function HomePage() {
       {/* Hero section */}
       <section className="max-w-5xl mx-auto mt-12 px-6 flex flex-col md:flex-row md:items-center gap-8">
         <div className="flex-1">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-snug text-white">
+        {/* Optional: Add a hero image here */}
+        <div className="flex-1 hidden md:block mb-10">
+          <img src="/RMA-Logo.png" alt="Hero" className="rounded-lg shadow-lg w-full h-auto" />
+        </div>  
+
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-snug text-white ">
             One Drop. One Winner.
           </h1>
           <p className="text-gray-300 mb-6 max-w-lg">
-            Discover art, watches, collectibles, and more in exclusive live auctions—powered by AI for smarter selling and bidding.
+            Discover art, watches, collectibles, and more in exclusive live auctions —powered by AI for smarter selling and bidding.
           </p>
     
            <Link href="/auctions" className="inline-block bg-orange-500 hover:bg-orange-600 text-white rounded px-8 py-3 font-semibold shadow">Explore Live Auctions</Link>
-           <br /> <Link href="/seller/new-auction">
+           <Link href="/seller/new-auction">
               <button className="bg-green-500 hover:bg-green-600 text-white rounded px-8 py-3 m-3 font-semibold shadow transition">
                 + Add New Auction
               </button>
             </Link>
         </div>
-        {/* Optional: Add a hero image here */}
-        <div className="flex-1 hidden md:block">
-          <img src="/logo.png" alt="Hero" className="rounded-lg shadow-lg w-full h-auto" />
-        </div>  
         
         
       </section>

@@ -61,7 +61,9 @@ function DynamicNavigation() {
     { href: '/seller/analytics', label: 'Analytics', icon: '📈' }, // Links to analytics
     { href: '/seller/earnings', label: 'Earnings', icon: '💰' },
     { href: '/messages', label: 'Messages', icon: '💬' },
-    { href: '/settings', label: 'Settings', icon: '⚙️' }
+    { href: '/settings', label: 'Settings', icon: '⚙️' },
+    { href: '/profile', label: 'My Profile', icon: '👤' },
+
   ]
 
   const buyerLinks = [
@@ -71,7 +73,9 @@ function DynamicNavigation() {
     { href: '/bids', label: 'My Bids', icon: '🏷️' },
     { href: '/purchases', label: 'My Purchases', icon: '📦' },
     { href: '/messages', label: 'Messages', icon: '💬' },
-    { href: '/settings', label: 'Settings', icon: '⚙️' }
+    { href: '/settings', label: 'Settings', icon: '⚙️' },
+    { href: '/profile', label: 'My Profile', icon: '👤' },
+
   ]
   
   const links = isBuyer ? buyerLinks : sellerLinks
@@ -108,8 +112,8 @@ export default function Sidebar() {
     <aside className="w-64 min-h-screen bg-[#18181B] p-6 flex flex-col border-r border-[#232326]">
       {/* Logo */}
       <Link href="/" className="font-bold text-2xl text-orange-500 mb-8 flex items-center gap-2">
-        <span>🏺</span>
-        Rock the Auction
+        <span><img src="/RMA-Logo.png" alt="Logo" className="w-35 content-center" /></span>
+        
       </Link>
 
       {/* Role Switcher */}

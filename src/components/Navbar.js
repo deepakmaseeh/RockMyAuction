@@ -4,7 +4,7 @@ export default function Navbar() {
   return (
     <nav className="w-full bg-[#18181B] px-6 py-4 shadow flex justify-between items-center">
       <div className="text-2xl font-bold text-orange-500 tracking-wide">
-        Rock the Auction
+        <img src="/RMA-LOGO.png" alt="Logo" className="h-12 w-auto inline-block" />
       </div>
       <ul className="flex gap-8 text-white text-base font-medium">
         <li><Link href="/" className="hover:text-orange-400 transition">Home</Link></li>

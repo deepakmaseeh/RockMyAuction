@@ -20,7 +20,9 @@ export function middleware(request) {
     '/watchlist',
     '/bids',
      '/seller/analytics',
-     '/seller/active-auctions' // ← ADD THIS LINE to make new auction page public
+     '/seller/active-auctions',
+    '/profile',  
+    '/admin'  // ← ADD THIS LINE to make new auction page public
   ]
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
   
