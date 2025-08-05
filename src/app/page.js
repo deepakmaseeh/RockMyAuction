@@ -1,59 +1,3 @@
-// import Navbar from "@/components/Navbar";
-// import Footer from "@/components/Footer";
-// import AuctionCard from "@/components/AuctionCard";
-
-// export default function HomePage() {
-//   return (
-//     <div className="bg-black text-white">
-//       <Navbar />
-
-//       {/* Hero Section */}
-//       <section className="p-6">
-//         <div className="bg-cover bg-center rounded-lg p-40" style={{ backgroundImage: 'url("/assets/heroImage.jpeg")' }}>
-//           <p className="text-blue-400 text-sm">⚡ LIVE COUNTDOWN</p>
-//           <h1 className="text-4xl font-bold mt-2">One Drop. One Winner.</h1>
-//           <p className="mt-2 text-sm text-gray-300">Discover, bid, and win exclusive items from luxury sneakers to rare art.</p>
-//           <div className="mt-4 flex gap-4">
-//             <span className="bg-black px-3 py-1 rounded">⏰ 01d 12h 30m</span>
-//             <button className="bg-blue-600 px-4 py-1 rounded">Explore Live Auctions</button>
-//           </div>
-//         </div>
-//       </section>
-
-//       {/* Featured Auctions */}
-//       <section className="p-6">
-//         <h2 className="text-2xl font-bold mb-4">Featured Live Auctions</h2>
-//         <div className="grid md:grid-cols-4 gap-6 m-1.5">
-//           <AuctionCard   id="1" title='Air Max 1 "Elephant Print" 2007' price="5500" img="/assets/image.png" />
-//           <AuctionCard   id="2" title="Rolex Daytona Ice Blue" price="98000" img="/assets/pngegg.png" />
-//           <AuctionCard id="3" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//           <AuctionCard id="4" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//           <AuctionCard id="5" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//           <AuctionCard id="6" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//           <AuctionCard id="7" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//           <AuctionCard id="8" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//           <AuctionCard id="9" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//           <AuctionCard id="10" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//           <AuctionCard id="11" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//           <AuctionCard id="12" title='Basquiat-Inspired Canvas "Neo"' price="12000" img="/assets/carren-blue.png" />
-//         </div>
-//       </section>
-
-      
-      
-
-//       {/* CTA */}
-//       <section className="bg-pink-500 text-white text-center p-10 my-6 rounded-lg mx-6">
-//         <h3 className="text-2xl font-bold">Ready to find your next gem?</h3>
-//         <p className="mt-2">Dive into our extensive collection of live auctions. Your next valuable find awaits!</p>
-//         <button className="mt-4 bg-white text-black px-4 py-2 rounded">Discover All Live Auctions →</button>
-//       </section>
-
-//       <Footer />
-//     </div>
-//   );
-// } 
-
 import Link from "next/link"
 import Navbar from "@/components/Navbar"
 import AuctionCard from "@/components/AuctionCard"
@@ -63,26 +7,48 @@ import Footer from "@/components/Footer"
 
 const liveAuctions = [
   {
-    image: "/assets/carren-blue.png", // Place images in /public
+    image: "/assets/PB-4.jpg", // Place images in /public
     title: 'Art Misc I "Elephant Print" 2021',
     currentBid: 6500,
     users: 34,
     endDate: "in 2h 30m",
   },
   {
-    image: "/assets/carren-blue.png",
+    image: "/assets/PB-2.jpg",
+    title: 'Rossignol inspired Canvas "Neon"',
+    currentBid: 12000,
+    users: 21,
+    endDate: "in 45m",
+  },
+  {
+    image: "/assets/PB-1.jpg",
+    title: 'Rossignol inspired Canvas "Neon"',
+    currentBid: 12000,
+    users: 21,
+    endDate: "in 45m",
+  },
+  {
+    image: "/assets/PB-4.jpg",
+    title: 'Rossignol inspired Canvas "Neon"',
+    currentBid: 12000,
+    users: 21,
+    endDate: "in 45m",
+  },
+  {
+    image: "/assets/PB-2.jpg",
     title: 'Rolex Daytona Platinum/Ice Blue',
     currentBid: 98000,
     users: 83,
     endDate: "in 1h 12m",
   },
   {
-    image: "/assets/carren-blue.png",
+    image: "/assets/destinationManali.jpg",
     title: 'Rossignol inspired Canvas "Neon"',
     currentBid: 12000,
     users: 21,
     endDate: "in 45m",
   },
+ 
 ]
 
 const categories = [
@@ -123,8 +89,8 @@ export default function HomePage() {
       <Navbar />
 
       {/* Hero section */}
-      <section className="max-w-5xl mx-auto mt-12 px-6 flex flex-col md:flex-row md:items-center gap-8">
-        <div className="flex-1">
+      <section className="max-w-5xl mx-auto mt-12 px-6 flex flex-col md:flex-row md:items-center gap-8 ">
+        <div className="flex-1 ">
         {/* Optional: Add a hero image here */}
         <div className="flex-1 hidden md:block mb-10">
           <img src="/RMA-Logo.png" alt="Hero" className="rounded-lg shadow-lg w-full h-auto" />

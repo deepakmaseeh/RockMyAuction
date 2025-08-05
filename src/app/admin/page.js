@@ -74,8 +74,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/dashboard" className="text-2xl font-bold text-orange-500 flex items-center gap-2">
-                <span>🏺</span>
-                Rock the Auction
+                <span><img src="/RMA-Logo.png" alt="Logo" className="w-35 content-center" /></span>
               </Link>
               <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">ADMIN</span>
             </div>
