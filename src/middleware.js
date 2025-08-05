@@ -29,7 +29,7 @@ export function middleware(request) {
   // Protected routes that require authentication (removed /seller and /dashboard from here)
   const protectedPaths = [
     '/buyer', 
-    '/profile', 
+    // '/profile', 
     '/settings',
     '/messages'
   ]

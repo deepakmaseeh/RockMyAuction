@@ -17,7 +17,7 @@ export default function Navbar() {
         {/* <li><Link href="/about" className="hover:text-orange-400 transition">About</Link></li> */}
 
         <li><Link href="/help-center" className="hover:text-orange-400 transition">Help</Link></li>
-        <li><Link href="/user" className="hover:text-orange-400 transition">User</Link></li>
+        <li><Link href="/profile" className="hover:text-orange-400 transition"><span>👤</span></Link></li>
         {/* <li><Link href="/new-auction" className="hover:text-orange-400 transition">new-auction</Link></li> */}
         
         <li>
