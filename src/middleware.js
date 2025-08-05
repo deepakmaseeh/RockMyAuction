@@ -15,13 +15,17 @@ export function middleware(request) {
     '/', 
     '/auctions', 
     '/about',
-    '/dashboard'  // ← ADD THIS LINE to make dashboard public
+    '/dashboard',
+    '/seller/new-auction',
+    '/watchlist',
+    '/bids',
+     '/seller/analytics',
+     '/seller/active-auctions' // ← ADD THIS LINE to make new auction page public
   ]
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
   
-  // Protected routes that require authentication (removed /dashboard from here)
+  // Protected routes that require authentication (removed /seller and /dashboard from here)
   const protectedPaths = [
-    '/seller', 
     '/buyer', 
     '/profile', 
     '/settings',
