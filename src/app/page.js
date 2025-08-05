@@ -54,11 +54,11 @@
 //   );
 // } 
 
-import Navbar from "../components/Navbar"
-import AuctionCard from "../components/AuctionCard"
-import CategoryCard from "../components/CategoryCard"
-import Footer from "@/components/Footer"
 import Link from "next/link"
+import Navbar from "@/components/Navbar"
+import AuctionCard from "@/components/AuctionCard"
+import CategoryCard from "@/components/CategoryCard"
+import Footer from "@/components/Footer"
 
 const liveAuctions = [
   {

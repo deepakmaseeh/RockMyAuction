@@ -1,11 +1,11 @@
 'use client'
 
-import { useUserRole } from '../../contexts/RoleContext'
-import Sidebar from '../../components/Sidebar'
-import StatsCard from '../../components/dashboard/StatsCard'
-import RecentActivity from '../../components/dashboard/RecentActivity'
-import QuickActions from '../../components/dashboard/QuickActions'
-import PerformanceChart from '../../components/dashboard/PerformanceChart'
+import { useUserRole } from '@/contexts/RoleContext'
+import Sidebar from '@/components/Sidebar'
+import StatsCard from '@/components/dashboard/StatsCard'
+import RecentActivity from '@/components/dashboard/RecentActivity'
+import QuickActions from '@/components/dashboard/QuickActions'
+import PerformanceChart from '@/components/dashboard/PerformanceChart'
 import {
   CurrencyDollarIcon,
   ShoppingBagIcon,
