@@ -74,14 +74,14 @@ const mockEarnings = {
   ]
 }
 
-// Earnings Card Component
+// Mobile-optimized Earnings Card Component
 function EarningsCard({ title, amount, change, changeType, icon, color = 'orange' }) {
   return (
-    <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-3xl">{icon}</div>
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326]">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="text-2xl sm:text-3xl">{icon}</div>
         {change && (
-          <span className={`text-sm px-2 py-1 rounded ${
+          <span className={`text-xs sm:text-sm px-2 py-1 rounded ${
             changeType === 'positive' ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'
           }`}>
             {changeType === 'positive' ? '↗' : '↘'} {change}
@@ -89,14 +89,14 @@ function EarningsCard({ title, amount, change, changeType, icon, color = 'orange
         )}
       </div>
       <div className="space-y-1">
-        <h3 className="text-2xl font-bold text-white">${amount.toLocaleString()}</h3>
-        <p className="text-gray-400 text-sm">{title}</p>
+        <h3 className="text-xl sm:text-2xl font-bold text-white">${amount.toLocaleString()}</h3>
+        <p className="text-gray-400 text-xs sm:text-sm">{title}</p>
       </div>
     </div>
   )
 }
 
-// Transaction Item Component
+// Mobile-optimized Transaction Item Component
 function TransactionItem({ transaction }) {
   const getTypeIcon = (type) => {
     switch (type) {
@@ -118,26 +118,26 @@ function TransactionItem({ transaction }) {
   const isNegative = transaction.amount < 0
 
   return (
-    <div className="flex items-center justify-between p-4 bg-[#232326] rounded-lg hover:bg-[#2a2a2e] transition">
-      <div className="flex items-center gap-4">
-        <div className="text-2xl">{getTypeIcon(transaction.type)}</div>
-        <div>
-          <h4 className="font-medium text-white">{transaction.item}</h4>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+    <div className="flex items-center justify-between p-3 sm:p-4 bg-[#232326] rounded-lg hover:bg-[#2a2a2e] transition">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="text-lg sm:text-2xl flex-shrink-0">{getTypeIcon(transaction.type)}</div>
+        <div className="flex-1 min-w-0">
+          <h4 className="font-medium text-white text-sm sm:text-base truncate">{transaction.item}</h4>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-400">
             <span>{new Date(transaction.date).toLocaleDateString()}</span>
-            <span>•</span>
-            <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(transaction.status)}`}>
+            <span className="hidden sm:inline">•</span>
+            <span className={`px-2 py-1 rounded-full text-xs w-fit ${getStatusColor(transaction.status)}`}>
               {transaction.status}
             </span>
           </div>
         </div>
       </div>
-      <div className="text-right">
-        <div className={`font-bold ${isNegative ? 'text-red-400' : 'text-green-400'}`}>
+      <div className="text-right flex-shrink-0 ml-3">
+        <div className={`font-bold text-sm sm:text-base ${isNegative ? 'text-red-400' : 'text-green-400'}`}>
           {isNegative ? '' : '+'}{transaction.net > 0 ? `$${transaction.net.toLocaleString()}` : `$${Math.abs(transaction.amount).toLocaleString()}`}
         </div>
         {transaction.type === 'sale' && (
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-gray-400 hidden sm:block">
             Gross: ${transaction.amount.toLocaleString()} • Fee: ${transaction.fees}
           </div>
         )}
@@ -146,30 +146,30 @@ function TransactionItem({ transaction }) {
   )
 }
 
-// Earnings Chart Component
+// Mobile-optimized Earnings Chart Component
 function EarningsChart({ data }) {
   const maxEarnings = Math.max(...data.map(d => d.earnings))
 
   return (
-    <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold">Monthly Earnings Trend</h3>
-        <div className="text-sm text-gray-400">Last 7 months</div>
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+        <h3 className="text-lg sm:text-xl font-bold">Monthly Earnings Trend</h3>
+        <div className="text-xs sm:text-sm text-gray-400">Last 7 months</div>
       </div>
       
-      <div className="h-64 flex items-end justify-between gap-2">
+      <div className="h-48 sm:h-64 flex items-end justify-between gap-1 sm:gap-2 overflow-x-auto">
         {data.map((item, index) => (
-          <div key={index} className="flex flex-col items-center flex-1">
-            <div className="relative w-full flex items-end justify-center" style={{ height: '220px' }}>
+          <div key={index} className="flex flex-col items-center flex-1 min-w-[40px]">
+            <div className="relative w-full flex items-end justify-center" style={{ height: '180px' }}>
               <div 
-                className="bg-orange-500 w-full max-w-[40px] rounded-t transition-all duration-500 hover:bg-orange-400 cursor-pointer"
-                style={{ height: `${(item.earnings / maxEarnings) * 200}px` }}
+                className="bg-orange-500 w-full max-w-[30px] sm:max-w-[40px] rounded-t transition-all duration-500 hover:bg-orange-400 cursor-pointer"
+                style={{ height: `${(item.earnings / maxEarnings) * 160}px` }}
                 title={`${item.month}: $${item.earnings.toLocaleString()}`}
               />
             </div>
             <div className="text-xs text-gray-400 text-center mt-2">
-              <div>{item.month}</div>
-              <div className="font-medium text-white">${(item.earnings / 1000).toFixed(1)}k</div>
+              <div className="font-medium">{item.month}</div>
+              <div className="font-medium text-white hidden sm:block">${(item.earnings / 1000).toFixed(1)}k</div>
             </div>
           </div>
         ))}
@@ -178,15 +178,15 @@ function EarningsChart({ data }) {
   )
 }
 
-// Payout Methods Component
+// Mobile-optimized Payout Methods Component
 function PayoutMethods({ methods, onAddMethod }) {
   return (
-    <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-bold">Payout Methods</h3>
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3 sm:gap-0">
+        <h3 className="text-lg sm:text-xl font-bold">Payout Methods</h3>
         <button 
           onClick={onAddMethod}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+          className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition touch-manipulation w-full sm:w-auto"
         >
           + Add Method
         </button>
@@ -194,31 +194,33 @@ function PayoutMethods({ methods, onAddMethod }) {
       
       <div className="space-y-3">
         {methods.map(method => (
-          <div key={method.id} className="flex items-center justify-between p-4 bg-[#232326] rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="text-2xl">
+          <div key={method.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-[#232326] rounded-lg gap-3 sm:gap-0">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="text-lg sm:text-2xl flex-shrink-0">
                 {method.type === 'PayPal' ? '💳' : '🏦'}
               </div>
-              <div>
-                <div className="font-medium text-white">{method.type}</div>
-                <div className="text-sm text-gray-400">
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-white text-sm sm:text-base">{method.type}</div>
+                <div className="text-xs sm:text-sm text-gray-400 truncate">
                   {method.email || method.account}
                 </div>
               </div>
-              {method.verified && (
-                <span className="bg-green-600 text-green-100 px-2 py-1 rounded-full text-xs">
-                  ✓ Verified
-                </span>
-              )}
-              {method.isDefault && (
-                <span className="bg-orange-600 text-orange-100 px-2 py-1 rounded-full text-xs">
-                  Default
-                </span>
-              )}
+              <div className="flex flex-wrap gap-1 sm:gap-2 flex-shrink-0">
+                {method.verified && (
+                  <span className="bg-green-600 text-green-100 px-2 py-1 rounded-full text-xs">
+                    ✓ Verified
+                  </span>
+                )}
+                {method.isDefault && (
+                  <span className="bg-orange-600 text-orange-100 px-2 py-1 rounded-full text-xs">
+                    Default
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button className="text-gray-400 hover:text-white text-sm">Edit</button>
-              <button className="text-gray-400 hover:text-red-400 text-sm">Remove</button>
+            <div className="flex gap-2 self-end sm:self-auto">
+              <button className="text-gray-400 hover:text-white active:text-orange-400 text-sm touch-manipulation px-2 py-1">Edit</button>
+              <button className="text-gray-400 hover:text-red-400 active:text-red-500 text-sm touch-manipulation px-2 py-1">Remove</button>
             </div>
           </div>
         ))}
@@ -248,41 +250,45 @@ export default function EarningsPage() {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white">
-      {/* Header */}
+      {/* Mobile-optimized Header */}
       <div className="bg-[#18181B] border-b border-[#232326]">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="text-2xl font-bold text-orange-500 flex items-center gap-2">
-              <img src="/RMA-Logo.png" alt="Rock My Auction" className="h-12" />
+            <Link href="/dashboard" className="text-lg sm:text-2xl font-bold text-orange-500 flex items-center gap-2">
+             <img src="/RMA-Logo.png" alt="Logo" className="w-8 content-center" />
+              <span className="sm:hidden"></span>
             </Link>
-            <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition">
-              ← Back to Dashboard
+            <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition text-sm sm:text-base">
+              <span className="hidden sm:inline">← Back to Dashboard</span>
+              <span className="sm:hidden">← Back</span>
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Mobile-optimized Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Earnings Dashboard</h1>
-            <p className="text-gray-400">Track your sales performance and manage payouts</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Earnings Dashboard</h1>
+            <p className="text-gray-400 text-sm sm:text-base">Track your sales performance and manage payouts</p>
           </div>
           
-          <div className="flex gap-4">
+          <div className="flex gap-3 sm:gap-4">
             <button
               onClick={handleRequestPayout}
               disabled={mockEarnings.currentBalance < 50}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold transition"
+              className="bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition touch-manipulation text-sm sm:text-base"
             >
-              Request Payout (${mockEarnings.currentBalance.toLocaleString()})
+              <span className="sm:hidden">Payout</span>
+              <span className="hidden sm:inline">Request Payout</span>
+              <span className="block sm:inline"> (${mockEarnings.currentBalance.toLocaleString()})</span>
             </button>
           </div>
         </div>
 
-        {/* Earnings Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Mobile-responsive Earnings Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <EarningsCard 
             title="Total Earnings" 
             amount={mockEarnings.totalEarnings} 
@@ -317,79 +323,79 @@ export default function EarningsPage() {
           />
         </div>
 
-        {/* Earnings Chart */}
-        <div className="mb-8">
+        {/* Mobile-optimized Earnings Chart */}
+        <div className="mb-6 sm:mb-8">
           <EarningsChart data={mockEarnings.monthlyChart} />
         </div>
 
-        {/* Tabs */}
-        <div className="bg-[#18181B] rounded-xl border border-[#232326] mb-8">
-          <div className="flex border-b border-[#232326]">
+        {/* Mobile-optimized Tabs */}
+        <div className="bg-[#18181B] rounded-lg sm:rounded-xl border border-[#232326] mb-6 sm:mb-8">
+          <div className="flex overflow-x-auto border-b border-[#232326]">
             {[
-              { key: 'overview', label: 'Overview', icon: '📊' },
-              { key: 'transactions', label: 'Transactions', icon: '💱' },
-              { key: 'payouts', label: 'Payout Methods', icon: '💳' }
+              { key: 'overview', label: 'Overview', shortLabel: 'Overview', icon: '📊' },
+              { key: 'transactions', label: 'Transactions', shortLabel: 'Transactions', icon: '💱' },
+              { key: 'payouts', label: 'Payout Methods', shortLabel: 'Payouts', icon: '💳' }
             ].map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setSelectedTab(tab.key)}
-                className={`flex items-center gap-2 px-6 py-4 font-medium transition ${
+                className={`flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 font-medium transition whitespace-nowrap touch-manipulation ${
                   selectedTab === tab.key
                     ? 'text-orange-400 border-b-2 border-orange-400'
-                    : 'text-gray-400 hover:text-white'
+                    : 'text-gray-400 hover:text-white active:text-orange-300'
                 }`}
               >
                 <span>{tab.icon}</span>
-                {tab.label}
+                <span className="text-sm sm:text-base">{tab.shortLabel}</span>
               </button>
             ))}
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {/* Overview Tab */}
             {selectedTab === 'overview' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <h3 className="text-lg font-bold">Earnings Summary</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-4 bg-[#232326] rounded-lg">
-                      <span className="text-gray-300">Gross Earnings</span>
-                      <span className="font-bold text-white">${(mockEarnings.monthlyEarnings + mockEarnings.platformFees).toLocaleString()}</span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <div className="space-y-4 sm:space-y-6">
+                  <h3 className="text-base sm:text-lg font-bold">Earnings Summary</h3>
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex justify-between items-center p-3 sm:p-4 bg-[#232326] rounded-lg">
+                      <span className="text-gray-300 text-sm sm:text-base">Gross Earnings</span>
+                      <span className="font-bold text-white text-sm sm:text-base">${(mockEarnings.monthlyEarnings + mockEarnings.platformFees).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 bg-[#232326] rounded-lg">
-                      <span className="text-gray-300">Platform Fees (10%)</span>
-                      <span className="font-bold text-red-400">-${mockEarnings.platformFees.toLocaleString()}</span>
+                    <div className="flex justify-between items-center p-3 sm:p-4 bg-[#232326] rounded-lg">
+                      <span className="text-gray-300 text-sm sm:text-base">Platform Fees (10%)</span>
+                      <span className="font-bold text-red-400 text-sm sm:text-base">-${mockEarnings.platformFees.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 bg-green-600/10 border border-green-600/20 rounded-lg">
-                      <span className="text-gray-300">Net Earnings</span>
-                      <span className="font-bold text-green-400">${mockEarnings.netEarnings.toLocaleString()}</span>
+                    <div className="flex justify-between items-center p-3 sm:p-4 bg-green-600/10 border border-green-600/20 rounded-lg">
+                      <span className="text-gray-300 text-sm sm:text-base">Net Earnings</span>
+                      <span className="font-bold text-green-400 text-sm sm:text-base">${mockEarnings.netEarnings.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                  <h3 className="text-lg font-bold">Performance Metrics</h3>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-[#232326] rounded-lg">
+                <div className="space-y-4 sm:space-y-6">
+                  <h3 className="text-base sm:text-lg font-bold">Performance Metrics</h3>
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="p-3 sm:p-4 bg-[#232326] rounded-lg">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-300">Average Sale Value</span>
-                        <span className="font-bold text-white">$1,470</span>
+                        <span className="text-gray-300 text-sm sm:text-base">Average Sale Value</span>
+                        <span className="font-bold text-white text-sm sm:text-base">$1,470</span>
                       </div>
-                      <div className="text-sm text-gray-400">Based on last 30 days</div>
+                      <div className="text-xs sm:text-sm text-gray-400">Based on last 30 days</div>
                     </div>
-                    <div className="p-4 bg-[#232326] rounded-lg">
+                    <div className="p-3 sm:p-4 bg-[#232326] rounded-lg">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-300">Conversion Rate</span>
-                        <span className="font-bold text-white">94%</span>
+                        <span className="text-gray-300 text-sm sm:text-base">Conversion Rate</span>
+                        <span className="font-bold text-white text-sm sm:text-base">94%</span>
                       </div>
-                      <div className="text-sm text-gray-400">Items sold / Items listed</div>
+                      <div className="text-xs sm:text-sm text-gray-400">Items sold / Items listed</div>
                     </div>
-                    <div className="p-4 bg-[#232326] rounded-lg">
+                    <div className="p-3 sm:p-4 bg-[#232326] rounded-lg">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-300">Avg. Payout Time</span>
-                        <span className="font-bold text-white">2-3 days</span>
+                        <span className="text-gray-300 text-sm sm:text-base">Avg. Payout Time</span>
+                        <span className="font-bold text-white text-sm sm:text-base">2-3 days</span>
                       </div>
-                      <div className="text-sm text-gray-400">After sale completion</div>
+                      <div className="text-xs sm:text-sm text-gray-400">After sale completion</div>
                     </div>
                   </div>
                 </div>
@@ -399,9 +405,9 @@ export default function EarningsPage() {
             {/* Transactions Tab */}
             {selectedTab === 'transactions' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold">Recent Transactions</h3>
-                  <select className="bg-[#232326] border border-[#333] rounded-lg px-4 py-2 text-white focus:border-orange-500 focus:outline-none">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
+                  <h3 className="text-base sm:text-lg font-bold">Recent Transactions</h3>
+                  <select className="bg-[#232326] border border-[#333] rounded-lg px-3 sm:px-4 py-2 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base">
                     <option value="all">All Types</option>
                     <option value="sales">Sales Only</option>
                     <option value="payouts">Payouts Only</option>
@@ -415,7 +421,7 @@ export default function EarningsPage() {
                 </div>
                 
                 <div className="text-center pt-4">
-                  <button className="text-orange-400 hover:text-orange-300 font-medium">
+                  <button className="text-orange-400 hover:text-orange-300 active:text-orange-500 font-medium transition touch-manipulation py-2 text-sm sm:text-base">
                     View All Transactions →
                   </button>
                 </div>

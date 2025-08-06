@@ -60,8 +60,8 @@ import { auctionAPI } from '@/lib/api'
 // Loading Component
 function LoadingSpinner() {
   return (
-    <div className="flex items-center justify-center p-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+    <div className="flex items-center justify-center p-6 sm:p-8">
+      <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-orange-500"></div>
     </div>
   )
 }
@@ -69,11 +69,11 @@ function LoadingSpinner() {
 // Error Component
 function ErrorMessage({ error, onRetry }) {
   return (
-    <div className="text-center p-8">
-      <div className="text-red-400 mb-4">Error: {error}</div>
+    <div className="text-center p-6 sm:p-8">
+      <div className="text-red-400 mb-4 text-sm sm:text-base">Error: {error}</div>
       <button 
         onClick={onRetry}
-        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm sm:text-base transition-colors"
       >
         Retry
       </button>
@@ -81,7 +81,7 @@ function ErrorMessage({ error, onRetry }) {
   )
 }
 
-// Auction Card Component
+// Mobile-optimized Auction Card Component
 function AuctionCard({ auction }) {
   const timeLeft = auction.endTime ? new Date(auction.endTime) - new Date() : 0
   const isEnded = timeLeft <= 0
@@ -99,14 +99,14 @@ function AuctionCard({ auction }) {
   }
 
   return (
-    <div className="bg-[#18181B] rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all overflow-hidden">
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all overflow-hidden">
       <div className="relative">
         <img
           src={auction.images?.[0] || '/placeholder-auction.jpg'}
           alt={auction.title}
-          className="w-full h-48 object-cover"
+          className="w-full h-40 sm:h-48 object-cover"
         />
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
           <span className={`px-2 py-1 rounded-full text-xs font-bold ${
             isEnded ? 'bg-gray-500 text-white' : 'bg-green-500 text-white'
           }`}>
@@ -115,28 +115,28 @@ function AuctionCard({ auction }) {
         </div>
       </div>
 
-      <div className="p-4">
-        <h3 className="font-bold text-white text-lg mb-2 line-clamp-2">
+      <div className="p-3 sm:p-4">
+        <h3 className="font-bold text-white text-sm sm:text-lg mb-2 line-clamp-2">
           {auction.title}
         </h3>
         
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-gray-400">Current Bid</span>
-          <span className="font-bold text-orange-400">
+          <span className="text-xs sm:text-sm text-gray-400">Current Bid</span>
+          <span className="font-bold text-orange-400 text-sm sm:text-base">
             ${auction.currentBid?.toLocaleString() || auction.startingBid?.toLocaleString() || '0'}
           </span>
         </div>
 
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm text-gray-400">{auction.bids || 0} bids</span>
-          <span className="text-sm font-medium text-white">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <span className="text-xs sm:text-sm text-gray-400">{auction.bids || 0} bids</span>
+          <span className="text-xs sm:text-sm font-medium text-white">
             {formatTimeLeft(timeLeft)}
           </span>
         </div>
 
         <Link
           href={`/auctions/${auction._id || auction.id}`}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg font-medium transition text-center block"
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block text-sm sm:text-base"
         >
           {isEnded ? 'View Results' : 'Place Bid'}
         </Link>
@@ -153,6 +153,7 @@ export default function AuctionsPage() {
     sortBy: 'ending_soon',
     search: ''
   })
+  const [showFilters, setShowFilters] = useState(false)
 
   const { data: auctions, loading, error, refetch } = useAuctions(filters)
 
@@ -162,36 +163,52 @@ export default function AuctionsPage() {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white">
-      {/* Header */}
+      {/* Mobile-optimized Header */}
       <div className="bg-[#18181B] border-b border-[#232326]">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="text-2xl font-bold text-orange-500 flex items-center gap-2">
-              <img src="/rock_my_auction_logo.png" alt="Rock My Auction" className="h-8 w-auto" />
+            <Link href="/dashboard" className="text-lg sm:text-2xl font-bold text-orange-500 flex items-center gap-2">
+              <img src="/rock_my_auction_logo.png" alt="Rock My Auction" className="h-6 sm:h-8 w-auto" />
             </Link>
-            <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition">
-              ← Back to Dashboard
+            <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition text-sm sm:text-base">
+              <span className="hidden sm:inline">← Back to Dashboard</span>
+              <span className="sm:hidden">← Back</span>
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Filters */}
-        <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326] mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Mobile-responsive Filters */}
+        <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326] mb-6 sm:mb-8">
+          {/* Mobile filter toggle */}
+          <div className="flex items-center justify-between mb-4 sm:hidden">
+            <h3 className="text-lg font-semibold">Filters</h3>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-orange-400 text-sm"
+            >
+              {showFilters ? 'Hide' : 'Show'} Filters
+            </button>
+          </div>
+
+          {/* Search bar - always visible */}
+          <div className="mb-4 sm:mb-0">
             <input
               type="text"
               placeholder="Search auctions..."
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none"
+              className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none text-sm sm:text-base"
             />
-            
+          </div>
+
+          {/* Filter dropdowns */}
+          <div className={`grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 ${showFilters ? 'block' : 'hidden sm:grid'}`}>
             <select
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none"
+              className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none text-sm sm:text-base"
             >
               <option value="all">All Categories</option>
               <option value="electronics">Electronics</option>
@@ -203,7 +220,7 @@ export default function AuctionsPage() {
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none"
+              className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none text-sm sm:text-base"
             >
               <option value="active">Active Auctions</option>
               <option value="ended">Ended Auctions</option>
@@ -213,7 +230,7 @@ export default function AuctionsPage() {
             <select
               value={filters.sortBy}
               onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-              className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none"
+              className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none text-sm sm:text-base"
             >
               <option value="ending_soon">Ending Soon</option>
               <option value="newest">Newest First</option>
@@ -223,18 +240,18 @@ export default function AuctionsPage() {
           </div>
         </div>
 
-        {/* Auctions Grid */}
+        {/* Mobile-optimized Auctions Grid */}
         {loading && <LoadingSpinner />}
         
         {error && <ErrorMessage error={error} onRetry={refetch} />}
         
         {auctions && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {auctions.length === 0 ? (
-              <div className="col-span-full text-center py-16">
-                <div className="text-6xl mb-4">🏺</div>
-                <h3 className="text-2xl font-bold mb-2">No auctions found</h3>
-                <p className="text-gray-400">Try adjusting your search filters</p>
+              <div className="col-span-full text-center py-12 sm:py-16">
+                <div className="text-4xl sm:text-6xl mb-4">🏺</div>
+                <h3 className="text-xl sm:text-2xl font-bold mb-2">No auctions found</h3>
+                <p className="text-gray-400 text-sm sm:text-base">Try adjusting your search filters</p>
               </div>
             ) : (
               auctions.map((auction) => (

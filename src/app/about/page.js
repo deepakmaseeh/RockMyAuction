@@ -49,123 +49,147 @@ export default function AboutPage() {
     <div className="min-h-screen flex flex-col bg-[#09090B] text-white">
       <Navbar />
 
-      {/* Hero */}
-      <section className="relative">
+      {/* Hero - Mobile Optimized */}
+      <section className="relative overflow-hidden">
         <img
           src="../../assets/heroimage.jpg"
           alt="Auction hero"
-          className="w-full h-[420px] object-cover opacity-50"
+          className="w-full h-64 sm:h-80 md:h-96 lg:h-[420px] object-cover opacity-50"
         />
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-          <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600 drop-shadow-lg">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600 drop-shadow-lg leading-tight">
             Where Collectors Meet Curators
           </h1>
-          <p className="max-w-3xl mt-4 text-gray-300">
+          <p className="max-w-xs sm:max-w-lg md:max-w-2xl lg:max-w-3xl mt-3 sm:mt-4 text-sm sm:text-base text-gray-300 leading-relaxed">
             Rock the Auction turns passion into opportunity. Bid on treasures,
             list your own finds, and join a community built on trust.
           </p>
-          <div className="flex gap-4 mt-8 flex-col sm:flex-row">
-            <Link href="/auctions" className="px-8 py-3 bg-orange-500 hover:bg-orange-600 rounded-lg font-semibold">
+          <div className="flex gap-3 sm:gap-4 mt-6 sm:mt-8 flex-col sm:flex-row w-full max-w-sm sm:max-w-none">
+            <Link 
+              href="/auctions" 
+              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 rounded-lg font-semibold text-sm sm:text-base transition-colors touch-manipulation text-center"
+            >
               Browse Live Auctions
             </Link>
-            <Link href="/seller/new-auction" className="px-8 py-3 bg-transparent border-2 border-orange-500 hover:bg-orange-500 rounded-lg font-semibold">
+            <Link 
+              href="/seller/new-auction" 
+              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-transparent border-2 border-orange-500 hover:bg-orange-500 active:bg-orange-600 rounded-lg font-semibold text-sm sm:text-base transition-colors touch-manipulation text-center"
+            >
               List Your Item
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Mission */}
-      <section className="max-w-5xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold mb-6 text-center">Our Mission</h2>
-        <p className="text-lg text-gray-300 leading-relaxed text-center">
+      {/* Mission - Mobile Optimized */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">Our Mission</h2>
+        <p className="text-base sm:text-lg text-gray-300 leading-relaxed text-center">
           Rock the Auction empowers anyone to be both&nbsp;
           <span className="text-orange-400 font-semibold">buyer</span> and&nbsp;
           <span className="text-orange-400 font-semibold">seller</span>, unlocking hidden
-          value in the world’s collections while guaranteeing authenticity,
+          value in the world's collections while guaranteeing authenticity,
           security, and excitement on every bid.
         </p>
       </section>
 
-      {/* Core Values */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold mb-10 text-center">Our Core Values</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* Core Values - Mobile Grid */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-10 text-center">Our Core Values</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
           {coreValues.map(v => (
             <FeatureCard key={v.title} {...v} />
           ))}
         </div>
       </section>
 
-      {/* Impact Stats */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold mb-10 text-center">Marketplace Impact</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+      {/* Impact Stats - Mobile Responsive Grid */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-10 text-center">Marketplace Impact</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {impactStats.map(s => (
-            <div key={s.label} className="text-center">
-              <div className="text-4xl font-bold text-orange-400">{s.number}</div>
-              <div className="text-lg font-semibold">{s.label}</div>
-              <div className="text-xs text-gray-400">{s.blurb}</div>
+            <div key={s.label} className="text-center p-3 sm:p-4 bg-[#18181B] rounded-lg border border-[#232326]">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-400 mb-1 sm:mb-2">
+                {s.number}
+              </div>
+              <div className="text-sm sm:text-base lg:text-lg font-semibold mb-1">
+                {s.label}
+              </div>
+              <div className="text-xs text-gray-400 leading-tight">
+                {s.blurb}
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold mb-10 text-center">Platform Highlights</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* Features - Mobile Grid */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-10 text-center">Platform Highlights</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
           {features.map(f => (
             <FeatureCard key={f.title} {...f} />
           ))}
         </div>
       </section>
 
-      {/* Dual-Role Illustration */}
-      <section className="max-w-6xl mx-auto px-6 py-16 flex flex-col lg:flex-row items-center gap-10">
-        <img
-          src="../../assets/buyer&seller.png"
-          alt="Buyer and seller roles diagram"
-          className="w-full lg:w-1/2 rounded-lg shadow-lg"
-        />
-        <div className="lg:w-1/2 space-y-4">
-          <h2 className="text-3xl font-bold">Buy Today, Sell Tomorrow</h2>
-          <p className="text-gray-300">
-            On Rock the Auction, your role is fluid. Snag rare finds from other
-            enthusiasts, then relist items from your collection— all under one
-            secure account.
-          </p>
-          <ul className="list-disc pl-6 text-gray-400 space-y-1">
-            <li>No separate seller signup—switch in one click</li>
-            <li>Unified wallet tracks balances from both roles</li>
-            <li>Seller analytics recommend best listing times</li>
-          </ul>
+      {/* Dual-Role Illustration - Mobile Stack */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <div className="flex flex-col lg:flex-row items-center gap-6 sm:gap-8 lg:gap-10">
+          <div className="w-full lg:w-1/2">
+            <img
+              src="../../assets/buyer&seller.png"
+              alt="Buyer and seller roles diagram"
+              className="w-full rounded-lg shadow-lg"
+            />
+          </div>
+          <div className="w-full lg:w-1/2 space-y-3 sm:space-y-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-center lg:text-left">
+              Buy Today, Sell Tomorrow
+            </h2>
+            <p className="text-sm sm:text-base text-gray-300 leading-relaxed text-center lg:text-left">
+              On Rock the Auction, your role is fluid. Snag rare finds from other
+              enthusiasts, then relist items from your collection— all under one
+              secure account.
+            </p>
+            <ul className="list-disc pl-4 sm:pl-6 text-sm sm:text-base text-gray-400 space-y-1 text-left">
+              <li>No separate seller signup—switch in one click</li>
+              <li>Unified wallet tracks balances from both roles</li>
+              <li>Seller analytics recommend best listing times</li>
+            </ul>
+          </div>
         </div>
       </section>
 
-      {/* Team */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold mb-10 text-center">Meet the Team</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* Team - Mobile Responsive Grid */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-10 text-center">Meet the Team</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {team.map(t => (
             <TeamMemberCard key={t.name} {...t} />
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="max-w-6xl mx-auto px-6 py-20 text-center">
-        <h2 className="text-3xl font-bold mb-6">Ready to Rock the Auction?</h2>
-        <p className="text-gray-400 mb-8 max-w-3xl mx-auto">
+      {/* CTA - Mobile Optimized */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Ready to Rock the Auction?</h2>
+        <p className="text-sm sm:text-base text-gray-400 mb-6 sm:mb-8 max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto leading-relaxed">
           Join thousands of collectors and creators redefining how treasures
-          change hands. Whether you’re here to bid or sell, your next story
+          change hands. Whether you're here to bid or sell, your next story
           starts now.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/auctions" className="bg-orange-500 hover:bg-orange-600 px-8 py-3 rounded-lg font-semibold">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-sm sm:max-w-none mx-auto">
+          <Link 
+            href="/auctions" 
+            className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-colors touch-manipulation"
+          >
             Browse Auctions
           </Link>
-          <Link href="/auth/register" className="bg-transparent border-2 border-orange-500 hover:bg-orange-500 px-8 py-3 rounded-lg font-semibold">
+          <Link 
+            href="/auth/register" 
+            className="bg-transparent border-2 border-orange-500 hover:bg-orange-500 active:bg-orange-600 px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-colors touch-manipulation"
+          >
             Create an Account
           </Link>
         </div>

@@ -120,8 +120,10 @@ const mockBidHistory = [
   }
 ]
 
-// Bid History Item Component
+// Mobile-optimized Bid History Item Component
 function BidHistoryItem({ bid, onRebid, onViewDetails }) {
+  const [showDetails, setShowDetails] = useState(false)
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'WINNING':
@@ -169,111 +171,116 @@ function BidHistoryItem({ bid, onRebid, onViewDetails }) {
   }
 
   return (
-    <div className="bg-[#18181B] rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all overflow-hidden">
-      <div className="p-6">
-        <div className="flex gap-4">
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all overflow-hidden">
+      <div className="p-4 sm:p-6">
+        <div className="flex gap-3 sm:gap-4">
           {/* Image */}
-          <div className="relative w-20 h-20 bg-[#232326] rounded-lg overflow-hidden flex-shrink-0">
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-[#232326] rounded-lg overflow-hidden flex-shrink-0">
             <img
               src={bid.image || '/placeholder-auction.jpg'}
               alt={bid.title}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-bold text-white text-lg truncate pr-4">
+              <h3 className="font-bold text-white text-sm sm:text-lg line-clamp-2 pr-2">
                 {bid.title}
               </h3>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bid.status)}`}>
-                  {getStatusIcon(bid.status)} {bid.status}
+                  <span className="sm:hidden">{getStatusIcon(bid.status)}</span>
+                  <span className="hidden sm:inline">{getStatusIcon(bid.status)} {bid.status}</span>
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-400 mb-3">
               <span>by {bid.seller}</span>
-              <span>•</span>
-              <span>{bid.category}</span>
-              <span>•</span>
-              <span>Bid {formatTime(bid.bidTime)}</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline">{bid.category}</span>
+              <span className="sm:hidden">•</span>
+              <span>{formatTime(bid.bidTime)}</span>
             </div>
 
-            {/* Bid Details Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            {/* Mobile: Simplified grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
               <div>
                 <div className="text-xs text-gray-400">My Bid</div>
-                <div className="font-bold text-white">${bid.bidAmount.toLocaleString()}</div>
+                <div className="font-bold text-white text-sm sm:text-base">${bid.bidAmount.toLocaleString()}</div>
               </div>
               <div>
-                <div className="text-xs text-gray-400">Current Bid</div>
-                <div className={`font-bold ${
+                <div className="text-xs text-gray-400">Current</div>
+                <div className={`font-bold text-sm sm:text-base ${
                   bid.status === 'WINNING' ? 'text-green-400' : 
                   bid.status === 'OUTBID' ? 'text-orange-400' : 'text-white'
                 }`}>
                   ${bid.currentBid.toLocaleString()}
                 </div>
               </div>
-              <div>
-                <div className="text-xs text-gray-400">My Bids</div>
-                <div className="font-bold text-blue-400">{bid.myBidCount}</div>
+              <div className="sm:block">
+                <div className="text-xs text-gray-400">Bids</div>
+                <div className="font-bold text-blue-400 text-sm sm:text-base">{bid.myBidCount}</div>
               </div>
-              <div>
-                <div className="text-xs text-gray-400">Time Left</div>
-                <div className="font-bold text-white">{bid.timeLeft}</div>
+              <div className="sm:block">
+                <div className="text-xs text-gray-400">Time</div>
+                <div className="font-bold text-white text-sm sm:text-base">{bid.timeLeft}</div>
               </div>
             </div>
 
-            {/* Auto-bid Info */}
-            {bid.isAutoBid && bid.maxBid && (
-              <div className="bg-blue-600/10 border border-blue-600/20 rounded-lg p-3 mb-4">
-                <div className="flex items-center gap-2 text-blue-400 text-sm">
-                  <span>🤖</span>
-                  <span>Auto-bidding active up to ${bid.maxBid.toLocaleString()}</span>
+            {/* Mobile: Collapsible details */}
+            <div className="sm:block">
+              {/* Auto-bid Info */}
+              {bid.isAutoBid && bid.maxBid && (
+                <div className="bg-blue-600/10 border border-blue-600/20 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
+                  <div className="flex items-center gap-2 text-blue-400 text-xs sm:text-sm">
+                    <span>🤖</span>
+                    <span>Auto-bid up to ${bid.maxBid.toLocaleString()}</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Won/Lost Info */}
-            {bid.status === 'WON' && (
-              <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-3 mb-4">
-                <div className="flex items-center justify-between text-green-400 text-sm">
-                  <span>🎉 Congratulations! You won this auction</span>
-                  <span>Final: ${bid.finalPrice.toLocaleString()}</span>
+              {/* Won/Lost Info */}
+              {bid.status === 'WON' && (
+                <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-green-400 text-xs sm:text-sm gap-1 sm:gap-0">
+                    <span>🎉 You won this auction!</span>
+                    <span>Final: ${bid.finalPrice.toLocaleString()}</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {bid.status === 'LOST' && (
-              <div className="bg-red-600/10 border border-red-600/20 rounded-lg p-3 mb-4">
-                <div className="flex items-center justify-between text-red-400 text-sm">
-                  <span>Auction ended - Better luck next time!</span>
-                  <span>Final: ${bid.finalPrice.toLocaleString()}</span>
+              {bid.status === 'LOST' && (
+                <div className="bg-red-600/10 border border-red-600/20 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-red-400 text-xs sm:text-sm gap-1 sm:gap-0">
+                    <span>Auction ended - Better luck next time!</span>
+                    <span>Final: ${bid.finalPrice.toLocaleString()}</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-gray-400">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+              <div className="text-xs text-gray-400 order-2 sm:order-1">
                 Total bids: {bid.totalBids} • Auction {bid.auctionStatus.toLowerCase()}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 order-1 sm:order-2">
                 <button
                   onClick={() => onViewDetails(bid.auctionId)}
-                  className="px-4 py-2 bg-[#232326] hover:bg-[#2a2a2e] text-gray-300 rounded-lg text-sm font-medium transition"
+                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[#232326] hover:bg-[#2a2a2e] active:bg-[#323238] text-gray-300 rounded-lg text-xs sm:text-sm font-medium transition touch-manipulation"
                 >
                   View Details
                 </button>
                 {(bid.status === 'OUTBID' || bid.status === 'WINNING') && bid.auctionStatus === 'LIVE' && (
                   <button
                     onClick={() => onRebid(bid)}
-                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition"
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg text-xs sm:text-sm font-medium transition touch-manipulation"
                   >
-                    {bid.status === 'OUTBID' ? 'Rebid' : 'Increase Bid'}
+                    {bid.status === 'OUTBID' ? 'Rebid' : 'Increase'}
                   </button>
                 )}
               </div>
@@ -285,31 +292,32 @@ function BidHistoryItem({ bid, onRebid, onViewDetails }) {
   )
 }
 
-// Filter Tabs Component
+// Mobile-optimized Filter Tabs Component
 function BidFilterTabs({ activeFilter, setActiveFilter, counts }) {
   const filters = [
-    { key: 'all', label: 'All Bids', count: counts.all },
-    { key: 'active', label: 'Active', count: counts.active },
-    { key: 'winning', label: 'Winning', count: counts.winning },
-    { key: 'won', label: 'Won', count: counts.won },
-    { key: 'lost', label: 'Lost', count: counts.lost }
+    { key: 'all', label: 'All', shortLabel: 'All', count: counts.all },
+    { key: 'active', label: 'Active', shortLabel: 'Active', count: counts.active },
+    { key: 'winning', label: 'Winning', shortLabel: 'Win', count: counts.winning },
+    { key: 'won', label: 'Won', shortLabel: 'Won', count: counts.won },
+    { key: 'lost', label: 'Lost', shortLabel: 'Lost', count: counts.lost }
   ]
 
   return (
-    <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326] mb-8">
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326] mb-6 sm:mb-8">
       <div className="flex flex-wrap gap-2">
         {filters.map(filter => (
           <button
             key={filter.key}
             onClick={() => setActiveFilter(filter.key)}
-            className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition flex items-center gap-1 sm:gap-2 text-xs sm:text-sm touch-manipulation ${
               activeFilter === filter.key
                 ? 'bg-orange-500 text-white'
-                : 'bg-[#232326] text-gray-300 hover:bg-[#2a2a2e] hover:text-white'
+                : 'bg-[#232326] text-gray-300 hover:bg-[#2a2a2e] hover:text-white active:bg-[#323238]'
             }`}
           >
-            {filter.label}
-            <span className={`text-xs px-2 py-1 rounded-full ${
+            <span className="sm:hidden">{filter.shortLabel}</span>
+            <span className="hidden sm:inline">{filter.label}</span>
+            <span className={`text-xs px-1.5 sm:px-2 py-1 rounded-full ${
               activeFilter === filter.key ? 'bg-orange-600' : 'bg-[#333]'
             }`}>
               {filter.count}
@@ -321,7 +329,7 @@ function BidFilterTabs({ activeFilter, setActiveFilter, counts }) {
   )
 }
 
-// Statistics Cards Component
+// Mobile-optimized Statistics Cards Component
 function BidStatistics({ bids }) {
   const stats = {
     totalBids: bids.reduce((sum, bid) => sum + bid.myBidCount, 0),
@@ -330,32 +338,26 @@ function BidStatistics({ bids }) {
     avgBidAmount: bids.length > 0 ? Math.round(bids.reduce((sum, bid) => sum + bid.bidAmount, 0) / bids.length) : 0
   }
 
+  const statCards = [
+    { label: 'Total Bids', shortLabel: 'Bids', value: stats.totalBids, color: 'text-orange-400' },
+    { label: 'Total Won Value', shortLabel: 'Won', value: `$${stats.totalSpent.toLocaleString()}`, color: 'text-green-400' },
+    { label: 'Success Rate', shortLabel: 'Success', value: `${stats.successRate}%`, color: 'text-blue-400' },
+    { label: 'Avg Bid Amount', shortLabel: 'Avg', value: `$${stats.avgBidAmount.toLocaleString()}`, color: 'text-purple-400' }
+  ]
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
-        <div className="text-center">
-          <div className="text-3xl font-bold text-orange-400">{stats.totalBids}</div>
-          <div className="text-sm text-gray-400">Total Bids Placed</div>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+      {statCards.map((stat, index) => (
+        <div key={index} className="bg-[#18181B] rounded-lg sm:rounded-xl p-3 sm:p-6 border border-[#232326]">
+          <div className="text-center">
+            <div className={`text-xl sm:text-3xl font-bold ${stat.color}`}>{stat.value}</div>
+            <div className="text-xs sm:text-sm text-gray-400 mt-1">
+              <span className="sm:hidden">{stat.shortLabel}</span>
+              <span className="hidden sm:inline">{stat.label}</span>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
-        <div className="text-center">
-          <div className="text-3xl font-bold text-green-400">${stats.totalSpent.toLocaleString()}</div>
-          <div className="text-sm text-gray-400">Total Won Value</div>
-        </div>
-      </div>
-      <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
-        <div className="text-center">
-          <div className="text-3xl font-bold text-blue-400">{stats.successRate}%</div>
-          <div className="text-sm text-gray-400">Success Rate</div>
-        </div>
-      </div>
-      <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
-        <div className="text-center">
-          <div className="text-3xl font-bold text-purple-400">${stats.avgBidAmount.toLocaleString()}</div>
-          <div className="text-sm text-gray-400">Avg Bid Amount</div>
-        </div>
-      </div>
+      ))}
     </div>
   )
 }
@@ -368,6 +370,7 @@ export default function BidHistoryPage() {
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('recent') // recent, amount, status
+  const [showSearch, setShowSearch] = useState(false)
 
   // Filter bids based on active filter
   const filteredBids = bidHistory.filter(bid => {
@@ -424,26 +427,28 @@ export default function BidHistoryPage() {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white">
-      {/* Header */}
+      {/* Mobile-optimized Header */}
       <div className="bg-[#18181B] border-b border-[#232326]">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="text-2xl font-bold text-orange-500 flex items-center gap-2">
+            <Link href="/dashboard" className="text-lg sm:text-2xl font-bold text-orange-500 flex items-center gap-2">
               <span>🏺</span>
-              Rock the Auction
+              <span className="hidden sm:inline">Rock the Auction</span>
+              <span className="sm:hidden">RMA</span>
             </Link>
-            <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition">
-              ← Back to Dashboard
+            <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition text-sm sm:text-base">
+              <span className="hidden sm:inline">← Back to Dashboard</span>
+              <span className="sm:hidden">← Back</span>
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Bid History</h1>
-          <p className="text-gray-400">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">My Bid History</h1>
+          <p className="text-gray-400 text-sm sm:text-base">
             Track all your bidding activity and manage your active bids.
           </p>
         </div>
@@ -451,15 +456,28 @@ export default function BidHistoryPage() {
         {/* Statistics */}
         <BidStatistics bids={bidHistory} />
 
+        {/* Mobile Search Toggle */}
+        <div className="sm:hidden mb-4">
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className="flex items-center gap-2 text-orange-400 text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {showSearch ? 'Hide Search' : 'Search & Sort'}
+          </button>
+        </div>
+
         {/* Search and Sort */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8 ${showSearch ? 'block' : 'hidden sm:flex'}`}>
           <div className="relative flex-1">
             <input
               type="text"
               placeholder="Search bid history..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#18181B] border border-[#232326] rounded-lg px-4 py-3 pl-10 text-white focus:border-orange-500 focus:outline-none"
+              className="w-full bg-[#18181B] border border-[#232326] rounded-lg px-4 py-3 pl-10 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
             />
             <svg
               className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500"
@@ -469,11 +487,21 @@ export default function BidHistoryPage() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="bg-[#18181B] border border-[#232326] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none"
+            className="bg-[#18181B] border border-[#232326] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
           >
             <option value="recent">Most Recent</option>
             <option value="amount">Highest Bid</option>
@@ -490,12 +518,12 @@ export default function BidHistoryPage() {
 
         {/* Bid History Items */}
         {sortedBids.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🏷️</div>
-            <h3 className="text-2xl font-bold mb-2">
+          <div className="text-center py-12 sm:py-16">
+            <div className="text-4xl sm:text-6xl mb-4">🏷️</div>
+            <h3 className="text-xl sm:text-2xl font-bold mb-2">
               {searchTerm ? 'No bids found' : 'No bidding history yet'}
             </h3>
-            <p className="text-gray-400 mb-8">
+            <p className="text-gray-400 mb-6 sm:mb-8 text-sm sm:text-base">
               {searchTerm 
                 ? 'Try adjusting your search terms' 
                 : 'Start bidding on auctions to see your history here'
@@ -503,13 +531,13 @@ export default function BidHistoryPage() {
             </p>
             <Link
               href="/auctions"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition inline-block"
+              className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition inline-block touch-manipulation text-sm sm:text-base"
             >
               Browse Auctions
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {sortedBids.map(bid => (
               <BidHistoryItem
                 key={bid.id}

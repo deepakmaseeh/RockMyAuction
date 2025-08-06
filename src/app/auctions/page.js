@@ -116,7 +116,7 @@ const featuredAuction = {
   status: "FEATURED"
 }
 
-// Inline AuctionCard Component (to avoid import errors)
+// Mobile-optimized AuctionCard Component
 function AuctionCard({ auction }) {
   const [timeLeft, setTimeLeft] = useState('')
 
@@ -152,15 +152,16 @@ function AuctionCard({ auction }) {
   const isEnded = timeLeft === 'ENDED'
 
   return (
-    <div className="bg-[#18181B] rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all duration-300 group overflow-hidden">
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all duration-300 group overflow-hidden">
       {/* Status Badge */}
       <div className="relative">
         <img
           src={auction.image || '/placeholder-auction.jpg'}
           alt={auction.title}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
         />
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
           <span className={`px-2 py-1 rounded-full text-xs font-bold ${
             isEnded ? 'bg-gray-500 text-white' : 
             isUrgent ? 'bg-red-500 text-white animate-pulse' : 
@@ -169,40 +170,40 @@ function AuctionCard({ auction }) {
             {isEnded ? 'ENDED' : auction.status}
           </span>
         </div>
-        <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
           {auction.bids} bids
         </div>
       </div>
 
       {/* Card Content */}
-      <div className="p-4">
-        <h3 className="font-bold text-white text-lg mb-2 line-clamp-2 group-hover:text-orange-400 transition-colors">
+      <div className="p-3 sm:p-4">
+        <h3 className="font-bold text-white text-sm sm:text-lg mb-2 line-clamp-2 group-hover:text-orange-400 transition-colors leading-tight">
           {auction.title}
         </h3>
         
         <div className="flex items-center justify-between mb-3">
-          <div>
-            <div className="text-2xl font-bold text-orange-400">
+          <div className="flex-1">
+            <div className="text-lg sm:text-2xl font-bold text-orange-400">
               ${auction.currentBid.toLocaleString()}
             </div>
             <div className="text-xs text-gray-400">Current Bid</div>
           </div>
-          <div className="text-right">
-            <div className={`text-lg font-bold ${isUrgent ? 'text-red-400' : 'text-white'}`}>
+          <div className="text-right flex-shrink-0">
+            <div className={`text-sm sm:text-lg font-bold ${isUrgent ? 'text-red-400' : 'text-white'}`}>
               {timeLeft}
             </div>
             <div className="text-xs text-gray-400">Time Left</div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
               {auction.seller.charAt(0)}
             </div>
-            <span className="text-sm text-gray-400">{auction.seller}</span>
+            <span className="text-xs sm:text-sm text-gray-400 truncate">{auction.seller}</span>
           </div>
-          <span className="text-xs bg-[#232326] text-gray-300 px-2 py-1 rounded">
+          <span className="text-xs bg-[#232326] text-gray-300 px-2 py-1 rounded flex-shrink-0">
             {auction.category}
           </span>
         </div>
@@ -211,16 +212,16 @@ function AuctionCard({ auction }) {
         <div className="flex gap-2">
           <Link
             href={`/auctions/${auction.id}`}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-center transition ${
+            className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium text-center transition text-sm sm:text-base touch-manipulation ${
               isEnded 
                 ? 'bg-gray-600 text-gray-300 cursor-not-allowed' 
-                : 'bg-orange-500 hover:bg-orange-600 text-white'
+                : 'bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white'
             }`}
           >
             {isEnded ? 'View Results' : 'Place Bid'}
           </Link>
-          <button className="p-2 bg-[#232326] hover:bg-[#2a2a2e] text-gray-300 rounded-lg transition">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button className="p-2 bg-[#232326] hover:bg-[#2a2a2e] active:bg-[#323238] text-gray-300 rounded-lg transition touch-manipulation">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </button>
@@ -230,7 +231,7 @@ function AuctionCard({ auction }) {
   )
 }
 
-// Inline SearchFilters Component (to avoid import errors)
+// Mobile-optimized SearchFilters Component
 function SearchFilters({
   searchTerm,
   setSearchTerm,
@@ -240,17 +241,38 @@ function SearchFilters({
   setSortBy,
   categories
 }) {
+  const [showFilters, setShowFilters] = useState(false)
+
   return (
-    <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Search Input */}
-        <div className="relative">
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326]">
+      {/* Mobile filter toggle */}
+      <div className="flex items-center justify-between mb-4 sm:hidden">
+        <h3 className="text-lg font-semibold">Search & Filter</h3>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="text-orange-400 text-sm font-medium flex items-center gap-1"
+        >
+          {showFilters ? 'Hide' : 'Show'} Filters
+          <svg
+            className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+        {/* Search Input - Always Visible */}
+        <div className="relative sm:col-span-1 md:col-span-1">
           <input
             type="text"
             placeholder="Search auctions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+            className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
           />
           <svg
             className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500"
@@ -260,67 +282,47 @@ function SearchFilters({
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        {/* Category Filter */}
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none appearance-none cursor-pointer"
-        >
-          {categories.map(category => (
-            <option key={category} value={category}>{category}</option>
-          ))}
-        </select>
+        {/* Filter dropdowns */}
+        <div className={`col-span-1 sm:col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 ${
+          showFilters ? 'block' : 'hidden sm:grid'
+        }`}>
+          {/* Category Filter */}
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 appearance-none cursor-pointer text-sm sm:text-base"
+          >
+            {categories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
 
-        {/* Sort By */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none appearance-none cursor-pointer"
-        >
-          <option value="ending-soon">Ending Soon</option>
-          <option value="highest-bid">Highest Bid</option>
-          <option value="most-bids">Most Bids</option>
-          <option value="newest">Newest</option>
-        </select>
+          {/* Sort By */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 appearance-none cursor-pointer text-sm sm:text-base"
+          >
+            <option value="ending-soon">Ending Soon</option>
+            <option value="highest-bid">Highest Bid</option>
+            <option value="most-bids">Most Bids</option>
+            <option value="newest">Newest</option>
+          </select>
+        </div>
       </div>
     </div>
-  )
-}
-
-// Inline SimpleNavbar Component (to avoid import errors if you don't have one)
-function SimpleNavbar() {
-  return (
-    <nav className="bg-[#18181B] border-b border-[#232326]">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-orange-500 flex items-center gap-2">
-            <span>🏺</span>
-            Rock the Auction
-          </Link>
-          <div className="flex items-center gap-6">
-            <Link href="/" className="text-gray-300 hover:text-orange-400 transition">Home</Link>
-            <Link href="/auctions" className="text-orange-400 font-medium">Auctions</Link>
-            <Link href="/about" className="text-gray-300 hover:text-orange-400 transition">About</Link>
-            <Link href="/auth/login" className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition">
-              Login
-            </Link>
-          </div>
-        </div>
-      </div>
-    </nav>
-  )
-}
-
-// Inline SimpleFooter Component (to avoid import errors if you don't have one)
-function SimpleFooter() {
-  return (
-    <footer className="bg-[#18181B] border-t border-[#232326] py-8">
-      <div className="max-w-7xl mx-auto px-6 text-center">
-        <p className="text-gray-400">© 2024 Rock the Auction. All rights reserved.</p>
-      </div>
-    </footer>
   )
 }
 
@@ -374,37 +376,48 @@ export default function AuctionsPage() {
     <div className="min-h-screen bg-[#09090B] text-white">
       <Navbar />
 
-      {/* Featured Auction Hero */}
-      <section className="relative h-[500px] bg-gradient-to-r from-red-900/20 to-orange-900/20 flex items-center justify-center">
+      {/* Mobile-optimized Featured Auction Hero */}
+      <section className="relative h-64 sm:h-80 md:h-96 lg:h-[500px] bg-gradient-to-r from-red-900/20 to-orange-900/20 flex items-center justify-center">
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{ backgroundImage: `url(${featuredAuction.image})` }}
         />
-        <div className="relative z-10 text-center max-w-4xl px-6">
-          <div className="inline-block bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold mb-4">
+        <div className="relative z-10 text-center max-w-4xl px-4 sm:px-6">
+          <div className="inline-block bg-red-500 text-white px-3 py-1 rounded-full text-xs sm:text-sm font-bold mb-3 sm:mb-4">
             FEATURED AUCTION
           </div>
-          <h1 className="text-5xl font-bold mb-4">{featuredAuction.title}</h1>
-          <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 leading-tight">
+            {featuredAuction.title}
+          </h1>
+          <p className="text-sm sm:text-base lg:text-xl text-gray-300 mb-4 sm:mb-6 max-w-2xl mx-auto leading-relaxed">
             {featuredAuction.description}
           </p>
-          <div className="flex items-center justify-center gap-8 mb-8">
+          
+          {/* Mobile-optimized stats */}
+          <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8">
             <div className="text-center">
-              <div className="text-3xl font-bold text-orange-400">${featuredAuction.currentBid.toLocaleString()}</div>
-              <div className="text-sm text-gray-400">Current Bid</div>
+              <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-orange-400">
+                ${featuredAuction.currentBid.toLocaleString()}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-400">Current Bid</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">{featuredAuction.timeLeft}</div>
-              <div className="text-sm text-gray-400">Time Left</div>
+              <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-white">
+                {featuredAuction.timeLeft}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-400">Time Left</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-400">{featuredAuction.bids}</div>
-              <div className="text-sm text-gray-400">Bids</div>
+              <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-400">
+                {featuredAuction.bids}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-400">Bids</div>
             </div>
           </div>
+          
           <Link 
             href={`/auctions/${featuredAuction.id}`}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold text-lg transition inline-block"
+            className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base lg:text-lg transition inline-block touch-manipulation"
           >
             View Auction Details
           </Link>
@@ -412,7 +425,7 @@ export default function AuctionsPage() {
       </section>
 
       {/* Search and Filters */}
-      <section className="max-w-7xl mx-auto px-6 py-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <SearchFilters
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -425,23 +438,23 @@ export default function AuctionsPage() {
       </section>
 
       {/* Live Auctions Grid */}
-      <section className="max-w-7xl mx-auto px-6 pb-16">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold">Live Auctions</h2>
-          <div className="flex items-center gap-2 text-green-400">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
+          <h2 className="text-2xl sm:text-3xl font-bold">Live Auctions</h2>
+          <div className="flex items-center gap-2 text-green-400 self-start sm:self-auto">
             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
             <span className="text-sm font-medium">{filteredAuctions.length} Live Auctions</span>
           </div>
         </div>
 
         {filteredAuctions.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-2xl font-bold mb-2">No auctions found</h3>
-            <p className="text-gray-400">Try adjusting your search or filters</p>
+          <div className="text-center py-12 sm:py-16">
+            <div className="text-4xl sm:text-6xl mb-4">🔍</div>
+            <h3 className="text-xl sm:text-2xl font-bold mb-2">No auctions found</h3>
+            <p className="text-gray-400 text-sm sm:text-base">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredAuctions.map((auction) => (
               <AuctionCard key={auction.id} auction={auction} />
             ))}
@@ -449,30 +462,30 @@ export default function AuctionsPage() {
         )}
 
         {/* Load More Button */}
-        <div className="text-center mt-12">
+        <div className="text-center mt-8 sm:mt-12">
           <button 
             onClick={() => alert('Load more functionality would be implemented here')}
-            className="bg-[#18181B] border border-[#232326] hover:border-orange-500 text-white px-8 py-3 rounded-lg font-medium transition"
+            className="bg-[#18181B] border border-[#232326] hover:border-orange-500 active:bg-[#232326] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base"
           >
             Load More Auctions
           </button>
         </div>
       </section>
 
-      {/* Newsletter Signup */}
-      <section className="bg-[#18181B] py-16">
-        <div className="max-w-4xl mx-auto text-center px-6">
-          <h2 className="text-3xl font-bold mb-4">Stay up-to-date with exclusive drops!</h2>
-          <p className="text-gray-400 mb-8">Get notified about the latest auctions and never miss a deal.</p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+      {/* Mobile-optimized Newsletter Signup */}
+      <section className="bg-[#18181B] py-12 sm:py-16">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Stay up-to-date with exclusive drops!</h2>
+          <p className="text-gray-400 mb-6 sm:mb-8 text-sm sm:text-base">Get notified about the latest auctions and never miss a deal.</p>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md mx-auto">
             <input
               type="email"
               placeholder="Your email"
-              className="flex-1 bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+              className="flex-1 bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
             />
             <button 
               onClick={() => alert('Newsletter signup would be implemented here')}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition"
+              className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition touch-manipulation text-sm sm:text-base"
             >
               Subscribe
             </button>
@@ -480,7 +493,7 @@ export default function AuctionsPage() {
         </div>
       </section>
 
-     <Footer/>
+      <Footer />
     </div>
   )
 }
