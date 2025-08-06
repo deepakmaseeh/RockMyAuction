@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUserRole } from '@/contexts/RoleContext'
+import Navbar from '@/components/Navbar'
 
-// Mock watchlist data
+// Mock watchlist data (unchanged)
 const mockWatchlistItems = [
   {
     id: 1,
@@ -85,7 +86,7 @@ const mockWatchlistItems = [
   }
 ]
 
-// Watchlist Item Component
+// Mobile-optimized Watchlist Item Component
 function WatchlistItem({ item, onRemove, onPlaceBid }) {
   const [timeLeft, setTimeLeft] = useState('')
 
@@ -116,7 +117,7 @@ function WatchlistItem({ item, onRemove, onPlaceBid }) {
     }
 
     calculateTimeLeft()
-    const timer = setInterval(calculateTimeLeft, 60000) // Update every minute
+    const timer = setInterval(calculateTimeLeft, 60000)
     return () => clearInterval(timer)
   }, [item.endTime, item.status])
 
@@ -124,15 +125,16 @@ function WatchlistItem({ item, onRemove, onPlaceBid }) {
   const isEnded = item.status === 'ENDED'
 
   return (
-    <div className="bg-[#18181B] rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all overflow-hidden">
-      <div className="p-6">
-        <div className="flex gap-4">
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all overflow-hidden">
+      <div className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row gap-4">
           {/* Image */}
-          <div className="relative w-24 h-24 bg-[#232326] rounded-lg overflow-hidden flex-shrink-0">
+          <div className="relative w-full sm:w-20 md:w-24 h-48 sm:h-20 md:h-24 bg-[#232326] rounded-lg overflow-hidden flex-shrink-0">
             <img
               src={item.image || '/placeholder-auction.jpg'}
               alt={item.title}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
             <div className="absolute top-2 left-2">
               <span className={`px-2 py-1 rounded-full text-xs font-bold ${
@@ -148,12 +150,12 @@ function WatchlistItem({ item, onRemove, onPlaceBid }) {
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-bold text-white text-lg truncate pr-4">
+              <h3 className="font-bold text-white text-base sm:text-lg line-clamp-2 pr-4">
                 {item.title}
               </h3>
               <button
                 onClick={() => onRemove(item.id)}
-                className="text-gray-400 hover:text-red-400 transition flex-shrink-0"
+                className="text-gray-400 hover:text-red-400 active:text-red-500 transition-colors flex-shrink-0 p-1 touch-manipulation"
                 title="Remove from watchlist"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,40 +164,46 @@ function WatchlistItem({ item, onRemove, onPlaceBid }) {
               </button>
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-400 mb-3">
               <span>by {item.seller}</span>
-              <span>•</span>
-              <span>Watched {item.watchedSince}</span>
-              <span>•</span>
-              <span className="bg-[#232326] px-2 py-1 rounded">{item.category}</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline">Watched {item.watchedSince}</span>
+              <span className="bg-[#232326] px-2 py-1 rounded text-xs">{item.category}</span>
             </div>
 
-            {/* Bidding Info */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            {/* Mobile: Show watched since */}
+            <div className="sm:hidden text-xs text-gray-500 mb-3">
+              Watched {item.watchedSince}
+            </div>
+
+            {/* Mobile-optimized Bidding Info */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
               <div>
                 <div className="text-xs text-gray-400">Current Bid</div>
-                <div className="font-bold text-orange-400">${item.currentBid.toLocaleString()}</div>
+                <div className="font-bold text-orange-400 text-sm sm:text-base">
+                  ${item.currentBid.toLocaleString()}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-gray-400">Your Highest</div>
-                <div className="font-bold text-white">
+                <div className="font-bold text-white text-sm sm:text-base">
                   {item.highestBid > 0 ? `$${item.highestBid.toLocaleString()}` : 'No bids'}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-gray-400">Time Left</div>
-                <div className={`font-bold ${isUrgent ? 'text-red-400' : 'text-white'}`}>
+                <div className={`font-bold text-sm sm:text-base ${isUrgent ? 'text-red-400' : 'text-white'}`}>
                   {timeLeft}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-gray-400">Total Bids</div>
-                <div className="font-bold text-blue-400">{item.bids}</div>
+                <div className="font-bold text-blue-400 text-sm sm:text-base">{item.bids}</div>
               </div>
             </div>
 
-            {/* Status & Actions */}
-            <div className="flex items-center justify-between">
+            {/* Mobile-optimized Status & Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
               <div className="flex items-center gap-2">
                 {item.isWinning && !isEnded && (
                   <span className="bg-green-600 text-green-100 px-2 py-1 rounded-full text-xs font-medium">
@@ -214,17 +222,17 @@ function WatchlistItem({ item, onRemove, onPlaceBid }) {
                 )}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 sm:gap-2">
                 <Link
                   href={`/auctions/${item.id}`}
-                  className="px-4 py-2 bg-[#232326] hover:bg-[#2a2a2e] text-gray-300 rounded-lg text-sm font-medium transition"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-[#232326] hover:bg-[#2a2a2e] active:bg-[#323238] text-gray-300 rounded-lg text-sm font-medium transition-colors text-center touch-manipulation"
                 >
                   View Details
                 </Link>
                 {!isEnded && (
                   <button
                     onClick={() => onPlaceBid(item)}
-                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition"
+                    className="flex-1 sm:flex-none px-4 py-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors touch-manipulation"
                   >
                     Place Bid
                   </button>
@@ -238,30 +246,31 @@ function WatchlistItem({ item, onRemove, onPlaceBid }) {
   )
 }
 
-// Filter Tabs Component
+// Mobile-optimized Filter Tabs Component
 function FilterTabs({ activeFilter, setActiveFilter, counts }) {
   const filters = [
-    { key: 'all', label: 'All Items', count: counts.all },
-    { key: 'active', label: 'Active', count: counts.active },
-    { key: 'winning', label: 'Winning', count: counts.winning },
-    { key: 'ended', label: 'Ended', count: counts.ended }
+    { key: 'all', label: 'All Items', shortLabel: 'All', count: counts.all },
+    { key: 'active', label: 'Active', shortLabel: 'Active', count: counts.active },
+    { key: 'winning', label: 'Winning', shortLabel: 'Winning', count: counts.winning },
+    { key: 'ended', label: 'Ended', shortLabel: 'Ended', count: counts.ended }
   ]
 
   return (
-    <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326] mb-8">
+    <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326] mb-6 sm:mb-8">
       <div className="flex flex-wrap gap-2">
         {filters.map(filter => (
           <button
             key={filter.key}
             onClick={() => setActiveFilter(filter.key)}
-            className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm touch-manipulation ${
               activeFilter === filter.key
                 ? 'bg-orange-500 text-white'
-                : 'bg-[#232326] text-gray-300 hover:bg-[#2a2a2e] hover:text-white'
+                : 'bg-[#232326] text-gray-300 hover:bg-[#2a2a2e] hover:text-white active:bg-[#323238]'
             }`}
           >
-            {filter.label}
-            <span className={`text-xs px-2 py-1 rounded-full ${
+            <span className="sm:hidden">{filter.shortLabel}</span>
+            <span className="hidden sm:inline">{filter.label}</span>
+            <span className={`text-xs px-1.5 sm:px-2 py-1 rounded-full ${
               activeFilter === filter.key ? 'bg-orange-600' : 'bg-[#333]'
             }`}>
               {filter.count}
@@ -322,39 +331,27 @@ export default function WatchlistPage() {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white">
-      {/* Header */}
-      <div className="bg-[#18181B] border-b border-[#232326]">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="text-2xl font-bold text-orange-500 flex items-center gap-2">
-              <span>🏺</span>
-              Rock the Auction
-            </Link>
-            <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition">
-              ← Back to Dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
+      {/* Use Navbar component with logo */}
+      <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Watchlist</h1>
-          <p className="text-gray-400">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Mobile-optimized Page Header */}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">My Watchlist</h1>
+          <p className="text-gray-400 text-sm sm:text-base">
             Keep track of auctions you're interested in and never miss a bidding opportunity.
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative max-w-md">
+        {/* Mobile-optimized Search Bar */}
+        <div className="mb-6 sm:mb-8">
+          <div className="relative max-w-full sm:max-w-md">
             <input
               type="text"
               placeholder="Search watchlist..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#18181B] border border-[#232326] rounded-lg px-4 py-3 pl-10 text-white focus:border-orange-500 focus:outline-none"
+              className="w-full bg-[#18181B] border border-[#232326] rounded-lg px-4 py-3 pl-10 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
             />
             <svg
               className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500"
@@ -364,6 +361,16 @@ export default function WatchlistPage() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors touch-manipulation"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
@@ -376,12 +383,12 @@ export default function WatchlistPage() {
 
         {/* Watchlist Items */}
         {filteredItems.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">👁️</div>
-            <h3 className="text-2xl font-bold mb-2">
+          <div className="text-center py-12 sm:py-16">
+            <div className="text-4xl sm:text-6xl mb-4">👁️</div>
+            <h3 className="text-xl sm:text-2xl font-bold mb-2">
               {searchTerm ? 'No items found' : 'Your watchlist is empty'}
             </h3>
-            <p className="text-gray-400 mb-8">
+            <p className="text-gray-400 mb-6 sm:mb-8 text-sm sm:text-base">
               {searchTerm 
                 ? 'Try adjusting your search terms' 
                 : 'Start watching auctions to keep track of items you\'re interested in'
@@ -389,13 +396,13 @@ export default function WatchlistPage() {
             </p>
             <Link
               href="/auctions"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition inline-block"
+              className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors inline-block touch-manipulation text-sm sm:text-base"
             >
               Browse Auctions
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {filteredItems.map(item => (
               <WatchlistItem
                 key={item.id}
@@ -407,26 +414,26 @@ export default function WatchlistPage() {
           </div>
         )}
 
-        {/* Summary Stats */}
+        {/* Mobile-optimized Summary Stats */}
         {watchlistItems.length > 0 && (
-          <div className="mt-12 bg-[#18181B] rounded-xl p-6 border border-[#232326]">
-            <h3 className="text-xl font-bold mb-4">Watchlist Summary</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="mt-8 sm:mt-12 bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326]">
+            <h3 className="text-lg sm:text-xl font-bold mb-4">Watchlist Summary</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-400">{counts.all}</div>
-                <div className="text-sm text-gray-400">Total Items</div>
+                <div className="text-xl sm:text-2xl font-bold text-orange-400">{counts.all}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Total Items</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">{counts.winning}</div>
-                <div className="text-sm text-gray-400">Currently Winning</div>
+                <div className="text-xl sm:text-2xl font-bold text-green-400">{counts.winning}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Currently Winning</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-400">{counts.active}</div>
-                <div className="text-sm text-gray-400">Active Auctions</div>
+                <div className="text-xl sm:text-2xl font-bold text-blue-400">{counts.active}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Active Auctions</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-400">{counts.ended}</div>
-                <div className="text-sm text-gray-400">Ended Auctions</div>
+                <div className="text-xl sm:text-2xl font-bold text-gray-400">{counts.ended}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Ended Auctions</div>
               </div>
             </div>
           </div>

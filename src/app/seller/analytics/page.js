@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUserRole } from '@/contexts/RoleContext'
+import Navbar from '@/components/Navbar'
 
 // Simple Chart Component (using CSS for bars)
 function BarChart({ data, title }) {
@@ -115,36 +116,24 @@ export default function SellerAnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white">
-      {/* Header */}
-      <div className="bg-[#18181B] border-b border-[#232326]">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="text-2xl font-bold text-orange-500 flex items-center gap-2">
-              <span>🏺</span>
-              Rock the Auction
-            </Link>
-            <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition">
-              ← Back to Dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
+      {/* Use Navbar Component */}
+      <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Sales Analytics</h1>
-            <p className="text-gray-400">Track your performance and optimize your selling strategy</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Sales Analytics</h1>
+            <p className="text-gray-400 text-sm sm:text-base">Track your performance and optimize your selling strategy</p>
           </div>
           
           {/* Time Range Selector */}
-          <div className="flex bg-[#18181B] rounded-lg p-1 border border-[#232326]">
+          <div className="flex bg-[#18181B] rounded-lg p-1 border border-[#232326] self-start sm:self-auto">
             {['7d', '30d', '90d', '1y'].map((range) => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`px-4 py-2 rounded text-sm transition ${
+                className={`px-3 sm:px-4 py-2 rounded text-sm transition ${
                   timeRange === range
                     ? 'bg-orange-500 text-white'
                     : 'text-gray-400 hover:text-white'
@@ -157,31 +146,32 @@ export default function SellerAnalyticsPage() {
         </div>
 
         {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {analyticsData.cards.map((card, index) => (
             <AnalyticsCard key={index} {...card} />
           ))}
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
           <LineChart data={analyticsData.monthlyRevenue} title="Monthly Revenue Trend" />
           <BarChart data={analyticsData.categoryPerformance} title="Revenue by Category" />
         </div>
 
-        {/* Top Performing Items */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
+        {/* Top Performing Items and Quick Insights */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          {/* Top Performing Items */}
+          <div className="bg-[#18181B] rounded-xl p-4 sm:p-6 border border-[#232326]">
             <h3 className="text-lg font-bold mb-4">Top Performing Items</h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {topPerformingItems.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-[#232326] rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">{item.name}</h4>
-                    <p className="text-sm text-gray-400">{item.views} views • {item.bids} bids</p>
+                <div key={index} className="flex items-center justify-between p-3 sm:p-4 bg-[#232326] rounded-lg">
+                  <div className="min-w-0 flex-1 pr-4">
+                    <h4 className="font-medium text-white text-sm sm:text-base truncate">{item.name}</h4>
+                    <p className="text-xs sm:text-sm text-gray-400">{item.views} views • {item.bids} bids</p>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-orange-400">{item.revenue}</div>
+                    <div className="font-bold text-orange-400 text-sm sm:text-base">{item.revenue}</div>
                   </div>
                 </div>
               ))}
@@ -189,20 +179,20 @@ export default function SellerAnalyticsPage() {
           </div>
 
           {/* Quick Insights */}
-          <div className="bg-[#18181B] rounded-xl p-6 border border-[#232326]">
+          <div className="bg-[#18181B] rounded-xl p-4 sm:p-6 border border-[#232326]">
             <h3 className="text-lg font-bold mb-4">📊 Quick Insights</h3>
-            <div className="space-y-4">
-              <div className="p-4 bg-green-600/10 border border-green-600/20 rounded-lg">
-                <h4 className="font-semibold text-green-400 mb-2">🎯 Best Performance</h4>
-                <p className="text-gray-300 text-sm">Electronics category shows 24% higher conversion rate</p>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="p-3 sm:p-4 bg-green-600/10 border border-green-600/20 rounded-lg">
+                <h4 className="font-semibold text-green-400 mb-2 text-sm sm:text-base">🎯 Best Performance</h4>
+                <p className="text-gray-300 text-xs sm:text-sm">Electronics category shows 24% higher conversion rate</p>
               </div>
-              <div className="p-4 bg-blue-600/10 border border-blue-600/20 rounded-lg">
-                <h4 className="font-semibold text-blue-400 mb-2">📈 Growth Trend</h4>
-                <p className="text-gray-300 text-sm">Revenue increased by 18% compared to last month</p>
+              <div className="p-3 sm:p-4 bg-blue-600/10 border border-blue-600/20 rounded-lg">
+                <h4 className="font-semibold text-blue-400 mb-2 text-sm sm:text-base">📈 Growth Trend</h4>
+                <p className="text-gray-300 text-xs sm:text-sm">Revenue increased by 18% compared to last month</p>
               </div>
-              <div className="p-4 bg-orange-600/10 border border-orange-600/20 rounded-lg">
-                <h4 className="font-semibold text-orange-400 mb-2">💡 Recommendation</h4>
-                <p className="text-gray-300 text-sm">Consider listing more items in Electronics category</p>
+              <div className="p-3 sm:p-4 bg-orange-600/10 border border-orange-600/20 rounded-lg">
+                <h4 className="font-semibold text-orange-400 mb-2 text-sm sm:text-base">💡 Recommendation</h4>
+                <p className="text-gray-300 text-xs sm:text-sm">Consider listing more items in Electronics category</p>
               </div>
             </div>
           </div>

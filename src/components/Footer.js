@@ -38,19 +38,23 @@ export default function Footer() {
         <div>
           <h3 className="font-semibold text-white mb-3">Join Our Newsletter</h3>
           <p className="text-sm mb-3 text-gray-400">Get exclusive drops and auction alerts.</p>
-          <form className="flex flex-col sm:flex-row items-center gap-2">
-            <input
-              type="email"
-              placeholder="Your email"
-              className="w-full px-3 py-2 rounded bg-[#1e1e1e] border border-gray-700 text-sm text-white focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-            >
-              Subscribe
-            </button>
-          </form>
+        
+<form className="flex flex-col sm:flex-row gap-2">
+  <input
+    type="email"
+    placeholder="Your email"
+    className="w-full px-3 py-2 rounded bg-[#1e1e1e] border border-gray-700 text-sm text-white focus:outline-none focus:border-orange-500"
+    suppressHydrationWarning={true} // Add this
+  />
+  <button
+    type="submit"
+    className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
+    suppressHydrationWarning={true} // Add this
+  >
+    Subscribe
+  </button>
+</form>
+
         </div>
       </div>
 
