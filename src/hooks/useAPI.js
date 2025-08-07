@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { auctionAPI } from '@/lib/api'
+import { auctionAPI } from '@/lib/auctionAPI'
 
 // Generic hook for API calls
 export function useAPI(apiCall, dependencies = []) {

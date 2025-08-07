@@ -55,7 +55,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuctions } from '@/hooks/useAPI'
-import { auctionAPI } from '@/lib/api'
+import { auctionAPI } from '@/lib/auctionAPI'
 
 // Loading Component
 function LoadingSpinner() {

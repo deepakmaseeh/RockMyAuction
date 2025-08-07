@@ -1,135 +1,235 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from "next-auth/react"
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { auctionAPI } from '@/lib/auctionAPI' // Adjust path as needed
 
-export default function SignUpForm() {
+export default function SignupPage() {
   const router = useRouter()
-  const [error, setError] = useState('')
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'buyer'
+  })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    const formData = new FormData(e.target)
-    const name = formData.get('name')
-    const email = formData.get('email')
-    const password = formData.get('password')
-    const confirm = formData.get('confirmPassword')
-    const userType = formData.get('userType')
-
-    if (!name || !email || !password || !confirm) {
-      setError("All fields are required")
-      setLoading(false)
-      return
-    }
-    if (password !== confirm) {
-      setError("Passwords don't match")
-      setLoading(false)
-      return
-    }
-  
-    // TODO: Replace this with real API for user creation
-    // For now, just auto-redirect to verification step
-    router.push('/auth/verification')
+  const handleChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }))
   }
 
-  async function handleGoogle() {
-    setError('')
+  const handleSubmit = async (e) => {
+    e.preventDefault()
     setLoading(true)
-    await signIn("google", { callbackUrl: "/dashboard" })
-    setLoading(false)
+    setError('')
+    setSuccess('')
+
+    // Basic validation
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      setLoading(false)
+      return
+    }
+
+    if (!formData.name.trim()) {
+      setError('Name is required')
+      setLoading(false)
+      return
+    }
+
+    try {
+      console.log('🚀 Starting registration with your API...')
+      
+      // Prepare data according to your API schema
+      const userData = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        role: formData.role
+      }
+
+      console.log('📤 Sending registration data:', userData)
+
+      const response = await auctionAPI.register(userData)
+      
+      console.log('✅ Registration successful:', response)
+      
+      setSuccess('Account created successfully! You can now login.')
+      
+      // Clear form
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        role: 'buyer'
+      })
+      
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+
+    } catch (error) {
+      console.error('❌ Registration error:', error)
+      setError(error.message || 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="bg-[#18181B] p-8 rounded-2xl w-full max-w-md mx-auto shadow-lg">
-      <h2 className="text-2xl font-bold mb-2 text-white text-center">Create Your Account</h2>
-      <p className="text-gray-400 text-sm mb-6 text-center">Join Rock the Auction to buy or sell unique items.</p>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-gray-300 text-sm mb-1" htmlFor="name">Full Name</label>
-          <input
-            className="w-full bg-[#252529] border border-[#393940] rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-500"
-            name="name"
-            id="name"
-            placeholder="John Doe"
-            required
-          />
+    <div className="min-h-screen bg-[#09090B] flex items-center justify-center px-4">
+      <div className="bg-[#18181B] p-8 rounded-xl border border-[#232326] w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
+          <p className="text-gray-400">Join Rock My Auction</p>
         </div>
-        <div>
-          <label className="block text-gray-300 text-sm mb-1" htmlFor="email">Email</label>
-          <input
-            className="w-full bg-[#252529] border border-[#393940] rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-500"
-            type="email"
-            name="email"
-            id="email"
-            placeholder="john.doe@example.com"
-            required
-          />
+
+        {/* Success Message */}
+        {success && (
+          <div className="mb-6 p-4 bg-green-600/20 border border-green-600/20 rounded-lg">
+            <div className="text-green-400 text-center text-sm">
+              ✅ {success}
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-600/20 border border-red-600/20 rounded-lg">
+            <div className="text-red-400 text-center text-sm">
+              ❌ {error}
+            </div>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Full Name *
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              placeholder="Enter your full name"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              placeholder="Enter your email"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Password *
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              placeholder="Create a password (min 6 characters)"
+              required
+              minLength={6}
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Confirm Password *
+            </label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              placeholder="Confirm your password"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Account Type *
+            </label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              disabled={loading}
+            >
+              <option value="buyer">Buyer - I want to bid on auctions</option>
+              <option value="seller">Seller - I want to sell items</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-semibold transition-colors duration-200"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Creating Account...
+              </div>
+            ) : (
+              'Create Account'
+            )}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-400">
+            Already have an account?{' '}
+            <Link href="/login" className="text-orange-400 hover:text-orange-300 transition-colors">
+              Sign in
+            </Link>
+          </p>
         </div>
-        <div>
-          <label className="block text-gray-300 text-sm mb-1" htmlFor="password">Password</label>
-          <input
-            className="w-full bg-[#252529] border border-[#393940] rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-500"
-            type="password"
-            name="password"
-            id="password"
-            placeholder="********"
-            minLength={6}
-            required
-          />
+
+        {/* Test Data Helper (Remove in production) */}
+        <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
+          <p className="text-xs text-gray-500 mb-2">Test with these credentials:</p>
+          <p className="text-xs text-gray-400">Email: test@example.com</p>
+          <p className="text-xs text-gray-400">Password: test123</p>
         </div>
-        <div>
-          <label className="block text-gray-300 text-sm mb-1" htmlFor="confirmPassword">Confirm Password</label>
-          <input
-            className="w-full bg-[#252529] border border-[#393940] rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-500"
-            type="password"
-            name="confirmPassword"
-            id="confirmPassword"
-            placeholder="********"
-            minLength={6}
-            required
-          />
-        </div>
-        <div className="flex space-x-4 justify-center text-white">
-          <label className="flex items-center space-x-1">
-            <input type="radio" name="userType" value="seller" className="accent-orange-500" required />
-            <span>Seller</span>
-          </label>
-          <label className="flex items-center space-x-1">
-            <input type="radio" name="userType" value="buyer" className="accent-orange-500" required />
-            <span>Buyer</span>
-          </label>
-        </div>
-        <button
-          className="w-full bg-orange-500 hover:bg-orange-600 py-2 rounded font-semibold text-white transition mt-2"
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? "Processing..." : "Continue to Verification"}
-        </button>
-        {error && <div className="text-red-500 text-sm bg-red-900/10 p-2 rounded">{error}</div>}
-      </form>
-      <div className="flex items-center my-4">
-        <span className="flex-1 border-t border-gray-600" />
-        <span className="px-2 text-gray-500 text-xs">or sign up with</span>
-        <span className="flex-1 border-t border-gray-600" />
-      </div>
-      <button
-        type="button"
-        onClick={handleGoogle}
-        className="w-full flex items-center justify-center gap-2 bg-[#212126] hover:bg-[#18181B] border border-gray-700 py-2 rounded font-medium text-white transition mb-3"
-        disabled={loading}
-      >
-        <svg width="18" height="18" fill="currentColor" aria-hidden="true"><g><path fill="#FFC107" d="M17.39 7.73h-1.62V7.34H9v3.32h6.03c-.53 1.4-1.94 2.45-3.53 2.45A4.18 4.18 0 1 1 14.97 6.4l2.09-2.02A7.25 7.25 0 0 0 9 2.1a7.2 7.2 0 1 0 0 14.39c3.58 0 6.78-2.79 7.14-6.39a6.8 6.8 0 0 0-.75-2.37z"/><path fill="#FF3D00" d="M2.32 4.4l2.52 1.85A4.18 4.18 0 0 1 9 4.5c.84 0 1.64.27 2.3.78l2.29-1.78A7.15 7.15 0 0 0 9 2.1a7.22 7.22 0 0 0-6.74 4.3z"/><path fill="#4CAF50" d="M9 16.5c1.76 0 3.38-.59 4.63-1.6l-2.18-1.8A4.19 4.19 0 0 1 9 13.5a4.19 4.19 0 0 1-3.92-2.69l-2.5 1.93A7.21 7.21 0 0 0 9 16.5z"/><path fill="#1976D2" d="M17.39 7.73h-1.62V7.34H9v3.32h6.03c-.24.66-.64 1.26-1.18 1.74V14.7h2.89c.96-.98 1.53-2.33 1.53-3.7 0-.55-.05-1.1-.15-1.64z"/></g></svg>
-        Continue with Google
-      </button>
-      <div className="text-center text-sm text-gray-400">
-        Already have an account?{' '}
-        <a href="/auth/login" className="text-orange-400 hover:underline">Log In</a>
       </div>
     </div>
   )

@@ -24,7 +24,7 @@ const categories = [
 export default function AddNewAuctionForm() {
   const router = useRouter()
   const dropRef = useRef(null)
-  
+
   // Form state
   const [image, setImage] = useState(null)
   const [preview, setPreview] = useState(null)
@@ -36,64 +36,86 @@ export default function AddNewAuctionForm() {
   const [quantity, setQuantity] = useState(1)
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
-  
+
   // AI Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [aiSuggestions, setAiSuggestions] = useState(null)
   const [analysisError, setAnalysisError] = useState('')
-  
+
   // Form submission state
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  // Handle image upload and trigger AI analysis
+  // ENHANCED IMAGE UPLOAD HANDLER
   const handleImageUpload = async (file) => {
     if (!file) return
 
-    setImage(file)
-    setPreview(URL.createObjectURL(file))
-    setAnalysisComplete(false)
-    setAnalysisError('')
-    setIsAnalyzing(true)
+    // Validation: type, size, dimensions
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    const maxSizeMB = 5
+    const minWidth = 400, minHeight = 400
 
-    try {
-      // Create FormData for API call
-      const formData = new FormData()
-      formData.append('image', file)
+    if (!validTypes.includes(file.type)) {
+      setError('Please upload a JPG, PNG, WEBP, or GIF image.')
+      return
+    }
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      setError(`Image file must be less than ${maxSizeMB}MB.`)
+      return
+    }
 
-      // Call AI analysis API
-      const response = await fetch('/api/analyze-image', {
-        method: 'POST',
-        body: formData,
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        const analysis = result.analysis
-        setAiSuggestions(analysis)
-        
-        // Auto-populate form fields
-        setTitle(analysis.title || '')
-        setCategory(analysis.category || categories[0])
-        setDescription(analysis.description || '')
-        
-        // Set suggested starting bid if provided
-        if (analysis.suggestedStartingBid) {
-          const bidAmount = analysis.suggestedStartingBid.replace(/[^\d.]/g, '')
-          setStartingBid(bidAmount)
-        }
-        
-        setAnalysisComplete(true)
-      } else {
-        setAnalysisError(result.error || 'Failed to analyze image')
+    // Check image dimensions before accepting
+    const img = new window.Image()
+    img.src = URL.createObjectURL(file)
+    img.onload = async () => {
+      if (img.width < minWidth || img.height < minHeight) {
+        setError(`Image must be at least ${minWidth}x${minHeight}px.`)
+        URL.revokeObjectURL(img.src)
+        return
       }
-    } catch (err) {
-      console.error('Analysis error:', err)
-      setAnalysisError('Failed to analyze image. Please try again.')
-    } finally {
-      setIsAnalyzing(false)
+      URL.revokeObjectURL(img.src)
+      // Passed validation!
+      setError('')
+      setImage(file)
+      setPreview(URL.createObjectURL(file))
+      setAnalysisComplete(false)
+      setAnalysisError('')
+      setIsAnalyzing(true)
+
+      try {
+        // AI analysis API call (your backend endpoint here)
+        const formData = new FormData()
+        formData.append('image', file)
+        const response = await fetch('/api/analyze-image', {
+          method: 'POST',
+          body: formData,
+        })
+        const result = await response.json()
+        if (result.success) {
+          const analysis = result.analysis
+          setAiSuggestions(analysis)
+          setTitle(analysis.title || '')
+          setCategory(analysis.category || categories[0])
+          setDescription(analysis.description || '')
+          if (analysis.suggestedStartingBid) {
+            const bidAmount = analysis.suggestedStartingBid.replace(/[^\d.]/g, '')
+            setStartingBid(bidAmount)
+          }
+          setAnalysisComplete(true)
+        } else {
+          setAnalysisError(result.error || 'Failed to analyze image')
+        }
+      } catch (err) {
+        console.error('Analysis error:', err)
+        setAnalysisError('Failed to analyze image. Please try again.')
+      } finally {
+        setIsAnalyzing(false)
+      }
+    }
+    img.onerror = () => {
+      setError('Invalid image file. Please select a different file.')
+      URL.revokeObjectURL(img.src)
     }
   }
 
@@ -106,16 +128,13 @@ export default function AddNewAuctionForm() {
       handleImageUpload(file)
     }
   }
-
   const handleDrag = (e) => {
     e.preventDefault()
     e.stopPropagation()
   }
-
   const handleUploadClick = () => {
     dropRef.current.click()
   }
-
   const handleInputChange = (e) => {
     const file = e.target.files[0]
     if (file) {
@@ -123,7 +142,7 @@ export default function AddNewAuctionForm() {
     }
   }
 
-  // Reset AI suggestions (allow user to start over)
+  // Reset AI suggestions
   const resetAIAnalysis = async () => {
     if (image) {
       setIsAnalyzing(true)
@@ -144,8 +163,7 @@ export default function AddNewAuctionForm() {
     }
 
     try {
-      // Here you would normally submit to your auction creation API
-      // For now, just simulate success
+      // Submit to your auction API here
       console.log('Submitting auction:', {
         title,
         category,
@@ -157,7 +175,6 @@ export default function AddNewAuctionForm() {
         endTime,
         aiSuggestions
       })
-      
       alert("Auction created successfully!")
       router.push('/dashboard')
     } catch (err) {
@@ -169,28 +186,38 @@ export default function AddNewAuctionForm() {
 
   useEffect(() => {
     return () => {
-      if (preview) URL.revokeObjectURL(preview);
-    };
-  }, [preview]);
+      if (preview) URL.revokeObjectURL(preview)
+    }
+  }, [preview])
 
   return (
     <form
       onSubmit={handleSubmit}
       className="max-w-6xl mx-auto mt-10 bg-[#18181B] text-white rounded-2xl p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 shadow"
     >
-      {/* Left section: Image upload and AI analysis */}
+      {/* LEFT: Image upload and AI analysis */}
       <div className="lg:col-span-2">
+        {/* Error message for image upload */}
+        {error && (
+          <div className="mb-4 bg-red-800/20 border border-red-500 text-red-400 rounded p-3 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Image Upload Area */}
         <div className="mb-6">
           <label className="block font-bold mb-2">Upload Product Image</label>
           <p className="text-xs text-gray-400 mb-3">
             High-resolution images lead to better AI analysis and auction performance.
+            <br />
+            <span className="text-orange-400">
+              Accepted: JPG, PNG, WEBP, GIF | Max 5MB | Min 400x400px
+            </span>
           </p>
-          
           <div
             className={`bg-[#232326] rounded-lg flex flex-col items-center justify-center h-64 mb-4 border-2 border-dashed transition-colors cursor-pointer ${
-              isAnalyzing 
-                ? 'border-orange-400 bg-orange-400/10' 
+              isAnalyzing
+                ? 'border-orange-400 bg-orange-400/10'
                 : 'border-orange-500 hover:border-orange-400'
             }`}
             onDrop={handleDrop}
@@ -206,7 +233,6 @@ export default function AddNewAuctionForm() {
               style={{ display: "none" }}
               onChange={handleInputChange}
             />
-            
             {isAnalyzing ? (
               <div className="flex flex-col items-center text-orange-400">
                 <div className="animate-spin w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full mb-2"></div>
@@ -249,7 +275,6 @@ export default function AddNewAuctionForm() {
               </svg>
               {analysisComplete ? 'AI Analysis Complete' : 'Item Details'}
             </h3>
-            
             {analysisComplete && (
               <button
                 type="button"
@@ -260,7 +285,6 @@ export default function AddNewAuctionForm() {
               </button>
             )}
           </div>
-
           {analysisComplete && aiSuggestions && (
             <div className="bg-green-900/20 border border-green-500 text-green-400 p-3 rounded mb-4">
               <p className="text-xs">
@@ -269,7 +293,6 @@ export default function AddNewAuctionForm() {
               </p>
             </div>
           )}
-
           <div className="grid gap-4">
             <div>
               <label className="text-xs text-gray-400 block mb-1">Listing Title *</label>
@@ -281,7 +304,6 @@ export default function AddNewAuctionForm() {
                 required
               />
             </div>
-
             <div>
               <label className="text-xs text-gray-400 block mb-1">Category *</label>
               <select
@@ -295,7 +317,6 @@ export default function AddNewAuctionForm() {
                 ))}
               </select>
             </div>
-
             <div>
               <label className="text-xs text-gray-400 block mb-1">Description *</label>
               <textarea
@@ -310,8 +331,6 @@ export default function AddNewAuctionForm() {
                 {description.length}/300 characters
               </div>
             </div>
-
-            {/* Show AI key features if available */}
             {aiSuggestions?.keyFeatures && (
               <div>
                 <label className="text-xs text-gray-400 block mb-1">AI-Detected Key Features</label>
@@ -331,11 +350,10 @@ export default function AddNewAuctionForm() {
         </div>
       </div>
 
-      {/* Right section: Pricing & timing */}
+      {/* RIGHT: Pricing, quantity, timing */}
       <div className="space-y-6">
         <div className="bg-[#232326] rounded-lg p-4">
           <h3 className="font-bold mb-4">Pricing & Quantity</h3>
-          
           <div className="space-y-3">
             <div>
               <label className="text-xs text-gray-400 block mb-1">Starting Bid (USD) *</label>
@@ -350,7 +368,6 @@ export default function AddNewAuctionForm() {
                 required
               />
             </div>
-
             <div>
               <label className="text-xs text-gray-400 block mb-1">Reserve Price (Optional)</label>
               <input
@@ -362,7 +379,6 @@ export default function AddNewAuctionForm() {
                 className="w-full bg-[#252529] rounded px-3 py-2 text-white"
               />
             </div>
-
             <div>
               <label className="text-xs text-gray-400 block mb-1">Quantity</label>
               <input
@@ -376,10 +392,8 @@ export default function AddNewAuctionForm() {
             </div>
           </div>
         </div>
-
         <div className="bg-[#232326] rounded-lg p-4">
           <h3 className="font-bold mb-4 text-orange-400">Auction Timing</h3>
-          
           <div className="space-y-3">
             <div>
               <label className="text-xs text-gray-400 block mb-1">Start Time *</label>
@@ -391,7 +405,6 @@ export default function AddNewAuctionForm() {
                 required
               />
             </div>
-
             <div>
               <label className="text-xs text-gray-400 block mb-1">End Time *</label>
               <input
@@ -404,7 +417,6 @@ export default function AddNewAuctionForm() {
             </div>
           </div>
         </div>
-
         {/* Submit Button */}
         <button
           type="submit"
@@ -413,13 +425,12 @@ export default function AddNewAuctionForm() {
         >
           {submitting ? "Creating Auction..." : "Create Auction"}
         </button>
-
+        {/* Extra error (server/AI) */}
         {error && (
           <div className="p-3 bg-red-900/40 text-red-400 text-sm rounded">
             {error}
           </div>
         )}
-
         {/* AI Analysis Summary */}
         {aiSuggestions && (
           <div className="bg-[#232326] rounded-lg p-4">
