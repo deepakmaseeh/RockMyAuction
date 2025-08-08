@@ -24,17 +24,60 @@ const auctionCategories = [
 
 export async function POST(request) {
   try {
-    // Use native FormData parsing - NO MULTER NEEDED
-    const formData = await request.formData()
-    const file = formData.get('image')
+    let buffer;
+    let contentType;
     
-    if (!file || !file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'No valid image file provided' }, { status: 400 })
-    }
+    // Check if the request is JSON (S3 URL) or FormData (direct upload)
+    const contentTypeHeader = request.headers.get('content-type') || '';
+    
+    if (contentTypeHeader.includes('application/json')) {
+      // Handle S3 URL case
+      const { imageKey, imageUrl } = await request.json();
+      
+      if (!imageKey && !imageUrl) {
+        return NextResponse.json({ error: 'No image key or URL provided' }, { status: 400 });
+      }
+      
+      // If imageUrl is provided, fetch the image directly
+      if (imageUrl) {
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image from URL: ${response.statusText}`);
+        }
+        buffer = Buffer.from(await response.arrayBuffer());
+        contentType = response.headers.get('content-type');
+      } 
+      // If imageKey is provided, fetch from S3
+      else if (imageKey) {
+        // Get image from S3
+        const command = new GetObjectCommand({
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: imageKey,
+        });
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+        const { Body, ContentType } = await s3Client.send(command);
+        buffer = Buffer.from(await Body.transformToByteArray());
+        contentType = ContentType;
+      }
+    } else {
+      // Handle direct file upload case (backward compatibility)
+      const formData = await request.formData();
+      const file = formData.get('image');
+      
+      if (!file || !file.type.startsWith('image/')) {
+        return NextResponse.json({ error: 'No valid image file provided' }, { status: 400 });
+      }
+
+      // Convert file to buffer
+      const bytes = await file.arrayBuffer();
+      buffer = Buffer.from(bytes);
+      contentType = file.type;
+    }
+    
+    // Validate we have an image buffer
+    if (!buffer) {
+      return NextResponse.json({ error: 'Failed to process image' }, { status: 400 });
+    }
     
     // Optimize image using sharp
     const optimizedBuffer = await sharp(buffer)

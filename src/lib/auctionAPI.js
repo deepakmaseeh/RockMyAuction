@@ -409,6 +409,3 @@ class AuctionAPI {
     return this.request(`/api/sellers/${userId}/earnings`)
   }
 }
-
-export const auctionAPI = new AuctionAPI()
-export default auctionAPI

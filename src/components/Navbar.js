@@ -45,6 +45,12 @@ export default function Navbar() {
             >
               Auctions
             </Link>
+            <Link
+              href="/categories"
+              className="text-gray-300 hover:text-orange-400 transition text-sm lg:text-base"
+            >
+              Categories
+            </Link>
                 <Link
                   href="/dashboard"
                   className="text-gray-300 hover:text-orange-400 transition text-sm lg:text-base"

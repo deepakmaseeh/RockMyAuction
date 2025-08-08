@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import S3DirectUploadForm from '@/components/S3DirectUploadForm'
 
 const categories = [
   "Electronics",
@@ -47,7 +48,7 @@ export default function AddNewAuctionForm() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  // ENHANCED IMAGE UPLOAD HANDLER
+  // ENHANCED IMAGE UPLOAD HANDLER WITH S3 DIRECT UPLOAD
   const handleImageUpload = async (file) => {
     if (!file) return
 
@@ -84,13 +85,47 @@ export default function AddNewAuctionForm() {
       setIsAnalyzing(true)
 
       try {
-        // AI analysis API call (your backend endpoint here)
-        const formData = new FormData()
-        formData.append('image', file)
+        // 1. Get pre-signed URL from S3 upload API
+        const presignedResponse = await fetch('/api/s3-upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+        })
+
+        if (!presignedResponse.ok) {
+          throw new Error('Failed to get upload URL')
+        }
+
+        const { url, key, fileUrl } = await presignedResponse.json()
+
+        if (!url) {
+          throw new Error('Failed to get pre-signed URL')
+        }
+
+        // 2. Upload image directly to S3
+        const uploadResponse = await fetch(url, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        })
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload image to S3')
+        }
+
+        // 3. Call analysis API with the S3 key
         const response = await fetch('/api/analyze-image', {
           method: 'POST',
-          body: formData,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageKey: key, imageUrl: fileUrl }),
         })
+
         const result = await response.json()
         if (result.success) {
           const analysis = result.analysis
@@ -108,7 +143,7 @@ export default function AddNewAuctionForm() {
         }
       } catch (err) {
         console.error('Analysis error:', err)
-        setAnalysisError('Failed to analyze image. Please try again.')
+        setAnalysisError(`Failed to analyze image: ${err.message || 'Please try again.'}`)
       } finally {
         setIsAnalyzing(false)
       }
@@ -210,11 +245,11 @@ export default function AddNewAuctionForm() {
           <p className="text-xs text-gray-400 mb-3">
             High-resolution images lead to better AI analysis and auction performance.
             <br />
-            <span className="text-orange-400">
+            <span className="text-green-400">
               Accepted: JPG, PNG, WEBP, GIF | Max 5MB | Min 400x400px
             </span>
           </p>
-          <div
+          {/* <div
             className={`bg-[#232326] rounded-lg flex flex-col items-center justify-center h-64 mb-4 border-2 border-dashed transition-colors cursor-pointer ${
               isAnalyzing
                 ? 'border-orange-400 bg-orange-400/10'
@@ -241,15 +276,17 @@ export default function AddNewAuctionForm() {
             ) : preview ? (
               <img src={preview} alt="Preview" className="max-h-52 rounded" />
             ) : (
-              <div className="flex flex-col items-center text-gray-500">
-                <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004-4h10a4 4 0 004 4M7 10V4m0 6l4-4m-4 4l-4-4" />
-                </svg>
-                <span>Drag & drop or <span className="text-orange-400 underline">browse</span></span>
-                <span className="text-xs mt-1">AI will auto-generate title, category & description</span>
-              </div>
-            )}
-          </div>
+              // <div className="flex flex-col items-center text-gray-500">
+              //   <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              //     <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004-4h10a4 4 0 004 4M7 10V4m0 6l4-4m-4 4l-4-4" />
+              //   </svg>
+              //   <span>Drag & drop or <span className="text-orange-400 underline">browse</span></span>
+              //   <span className="text-xs mt-1">AI will auto-generate title, category & description</span>
+              // </div>
+              
+              )}
+              </div> */}
+              <S3DirectUploadForm /> 
 
           {analysisError && (
             <div className="bg-red-900/20 border border-red-500 text-red-400 p-3 rounded mb-4">
@@ -264,6 +301,8 @@ export default function AddNewAuctionForm() {
             </div>
           )}
         </div>
+                
+
 
         {/* AI-Generated Fields */}
         <div className="bg-[#212126] rounded-lg p-6">
@@ -446,3 +485,15 @@ export default function AddNewAuctionForm() {
     </form>
   )
 }
+
+
+
+
+
+
+    
+      
+    
+        
+        
+  
