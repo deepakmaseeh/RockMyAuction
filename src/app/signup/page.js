@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUserRole } from '@/contexts/RoleContext'
+import AuctionAPI from '@/lib/auctionAPI'
 import Navbar from '@/components/Navbar'
 
 export default function SignupPage() {
@@ -69,23 +70,13 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('https://auction-api-n4y1.onrender.com/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          password: formData.password
-        })
+      const api = new AuctionAPI()
+      const data = await api.register({
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        role: 'buyer' // or get from a form field if you have role selection
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed')
-      }
 
       // Store token and user data
       localStorage.setItem('auth-token', data.token)

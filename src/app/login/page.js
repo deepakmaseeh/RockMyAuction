@@ -29,22 +29,16 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const response = await fetch('https://auction-api-n4y1.onrender.com/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
+      // Import the auctionAPI
+      const { default: AuctionAPI } = await import('@/lib/auctionAPI')
+      const api = new AuctionAPI()
+      
+      const data = await api.login({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed')
-      }
-
-      // Store token and user data
-      localStorage.setItem('auth-token', data.token)
+      // User data and token are already stored by the API method
       if (data.user) {
         setUser(data.user)
       }

@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { RoleProvider } from '../contexts/RoleContext';
+import FloatingChatbot from '@/components/FloatingChatbot';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#09090B] text-white`}>
         <RoleProvider>
           {children}
+         <FloatingChatbot /> {/* ✅ Appears on all pages */}
         </RoleProvider>
       </body>
     </html>
