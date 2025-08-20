@@ -1,14 +1,10 @@
-// /lib/auctionAPI.js
-
-const PRODUCTION_API_URL = 'https://api.exceltechsolutions.online/api';
-
-// Use environment variable if set, otherwise default to production URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || PRODUCTION_API_URL;
+const PRODUCTION_API_URL = 'https://excellwebsolution.com';
+const API_BASE_URL = PRODUCTION_API_URL;
 
 class AuctionAPI {
   constructor() {
     this.baseURL = API_BASE_URL;
-    this.timeout = 30000; // 30 seconds timeout
+    this.timeout = 30000;
   }
 
   async request(endpoint, options = {}) {
@@ -20,17 +16,14 @@ class AuctionAPI {
       body: options.body,
     });
 
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout after 30 seconds')), this.timeout)
-    );
-
     const config = {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
         ...options.headers,
       },
-      credentials: 'omit', // Avoid sending cookies (handle auth with tokens)
+      // ✅ FIXED: Removed credentials: 'include' to fix CORS
+      // credentials: 'include', // ← REMOVED THIS LINE
       ...options,
     };
 
@@ -41,7 +34,7 @@ class AuctionAPI {
     }
 
     try {
-      const response = await Promise.race([fetch(url, config), timeoutPromise]);
+      const response = await fetch(url, config);
 
       console.log('📡 API Response:', {
         status: response.status,
@@ -66,7 +59,6 @@ class AuctionAPI {
         url,
         method: config.method || 'GET',
         error: error.message,
-        stack: error.stack,
       });
       throw this.createApiError(error);
     }
@@ -95,7 +87,7 @@ class AuctionAPI {
       case 403:
         throw new Error(errorData.message || 'Access forbidden. You do not have permission.');
       case 404:
-        throw new Error('Resource not found.');
+        throw new Error(errorData.message || 'API endpoint not found.');
       case 422:
         throw new Error(errorData.message || `Validation error: ${JSON.stringify(errorData)}`);
       case 429:
@@ -107,8 +99,7 @@ class AuctionAPI {
       case 503:
         throw new Error('Service unavailable. The server might be starting up.');
       default:
-        const message =
-          errorData.message || errorData.error || `Request failed: ${response.status} ${response.statusText}`;
+        const message = errorData.message || errorData.error || `Request failed: ${response.status} ${response.statusText}`;
         throw new Error(message);
     }
   }
@@ -120,6 +111,7 @@ class AuctionAPI {
       localStorage.removeItem('user-data');
       localStorage.removeItem('accessToken');
 
+      // Redirect to login
       if (
         !window.location.pathname.includes('/login') &&
         !window.location.pathname.includes('/signup')
@@ -142,91 +134,123 @@ class AuctionAPI {
       isNetworkError:
         error.message.includes('Failed to fetch') ||
         error.message.includes('ERR_FAILED') ||
-        error.message.includes('CORS'),
+        error.message.includes('CORS') ||
+        error.message.includes('net::ERR_'),
     };
   }
 
-  // ========== AUTHENTICATION ==========
-
+  // ✅ FIXED: Registration method
   async register(userData) {
     try {
+      console.log('📝 Registering user:', { email: userData.email, name: userData.name });
+      
       const requestData = {
-        type: 'register',
         name: userData.name,
         email: userData.email,
         password: userData.password,
-        role: userData.role || 'buyer',
       };
-      return await this.request('/auth/register', {
+
+      console.log('📤 Sending registration request:', requestData);
+
+      const response = await this.request('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(requestData),
       });
+
+      // Store token in localStorage only (no cookies needed)
+      if (response.token) {
+        localStorage.setItem('auth-token', response.token);
+        console.log('💾 Token stored in localStorage');
+      }
+
+      const userData_processed = {
+        id: response._id,
+        name: response.name,
+        email: response.email,
+      };
+      localStorage.setItem('user-data', JSON.stringify(userData_processed));
+
+      return response;
     } catch (error) {
+      console.error('Registration failed:', error);
+      
       if (error.isNetworkError) {
         throw new Error('Unable to connect to the server. Please check your internet connection and try again.');
       }
+      
       throw error;
     }
   }
 
+  // ✅ FIXED: Login method
   async login(credentials) {
     try {
+      console.log('🔐 Logging in user:', { email: credentials.email });
+      
       const requestData = {
-        type: 'login',
         email: credentials.email,
         password: credentials.password,
       };
-      const response = await this.request('/auth/login', {
+
+      console.log('📤 Sending login request:', requestData);
+
+      const response = await this.request('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify(requestData),
       });
 
-      // Store tokens and user data
-      const token = response.token || response.accessToken || response.authToken;
-      if (token) {
-        localStorage.setItem('auth-token', token);
+      // Store token in localStorage only
+      if (response.token) {
+        localStorage.setItem('auth-token', response.token);
+        console.log('💾 Token stored in localStorage');
       }
-      if (response.refreshToken) {
-        localStorage.setItem('refresh-token', response.refreshToken);
-      }
-      if (response.user) {
-        localStorage.setItem('user-data', JSON.stringify(response.user));
-      }
-      return response;
+      
+      const userData = {
+        id: response._id,
+        name: response.name,
+        email: response.email,
+      };
+      localStorage.setItem('user-data', JSON.stringify(userData));
+      
+      return {
+        ...response,
+        user: userData
+      };
     } catch (error) {
+      console.error('Login failed:', error);
+      
       if (error.isNetworkError) {
         throw new Error('Unable to connect to the server. Please check your internet connection and try again.');
       }
+      
       throw error;
     }
   }
 
   async logout() {
-    try {
-      const requestData = { type: 'logout' };
-      await this.request('/api/auth/logout', {
-        method: 'POST',
-        body: JSON.stringify(requestData),
-      });
-    } catch (error) {
-      console.warn('Logout request failed:', error);
-    } finally {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth-token');
-        localStorage.removeItem('refresh-token');
-        localStorage.removeItem('user-data');
-        localStorage.removeItem('accessToken');
-      }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth-token');
+      localStorage.removeItem('refresh-token');
+      localStorage.removeItem('user-data');
+      localStorage.removeItem('accessToken');
+      console.log('🧹 Auth data cleared from localStorage');
     }
     return { success: true };
   }
 
+  // Profile endpoints
   async getCurrentUser() {
-    return this.request('/api/auth/me');
+    return this.request('/api/auth/profile');
   }
 
-  // ========== AUCTIONS ==========
+  async updateUserProfile(userData) {
+    return this.request('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  }
 
+  // Auction endpoints
   async getAuctions(params = {}) {
     const queryParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -240,128 +264,46 @@ class AuctionAPI {
   }
 
   async createAuction(auctionData) {
-    const requestData = {
-      type: 'create',
-      ...auctionData,
-    };
     return this.request('/api/auctions', {
       method: 'POST',
-      body: JSON.stringify(requestData),
+      body: JSON.stringify(auctionData),
     });
   }
 
   async updateAuction(id, auctionData) {
-    const requestData = {
-      type: 'update',
-      ...auctionData,
-    };
     return this.request(`/api/auctions/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(requestData),
+      body: JSON.stringify(auctionData),
     });
   }
 
   async deleteAuction(id) {
-    const requestData = {
-      type: 'delete',
-    };
     return this.request(`/api/auctions/${id}`, {
       method: 'DELETE',
-      body: JSON.stringify(requestData),
     });
   }
 
-  // ========== BIDDING ==========
-
-  async placeBid(auctionId, bidData) {
-    const requestData = {
-      type: 'place_bid',
-      auctionId: auctionId,
-      ...bidData,
-    };
-    return this.request(`/api/auctions/${auctionId}/bids`, {
+  // Bidding endpoints
+  async placeBid(bidData) {
+    return this.request('/api/bids', {
       method: 'POST',
-      body: JSON.stringify(requestData),
+      body: JSON.stringify({
+        auctionId: bidData.auctionId,
+        bidAmount: bidData.bidAmount || bidData.amount,
+      }),
     });
   }
 
   async getBids(auctionId) {
-    return this.request(`/api/auctions/${auctionId}/bids`);
+    return this.request(`/api/bids/${auctionId}`);
   }
 
-  async getUserBids(userId) {
-    return this.request(`/api/users/${userId}/bids`);
-  }
-
-  // ========== USER ==========
-
-  async getUserProfile(userId) {
-    return this.request(`/api/users/${userId}`);
-  }
-
-  async updateUserProfile(userId, userData) {
-    const requestData = {
-      type: 'update_profile',
-      ...userData,
-    };
-    return this.request(`/api/users/${userId}`, {
-      method: 'PUT',
-      body: JSON.stringify(requestData),
-    });
-  }
-
-  // ========== WATCHLIST ==========
-
-  async getWatchlist(userId) {
-    return this.request(`/api/users/${userId}/watchlist`);
-  }
-
-  async addToWatchlist(userId, auctionId) {
-    const requestData = {
-      type: 'add_to_watchlist',
-      auctionId: auctionId,
-    };
-    return this.request(`/api/users/${userId}/watchlist`, {
+  // AI endpoints
+  async generateAIContent(prompt) {
+    return this.request('/api/ai/generate', {
       method: 'POST',
-      body: JSON.stringify(requestData),
+      body: JSON.stringify({ prompt }),
     });
-  }
-
-  async removeFromWatchlist(userId, auctionId) {
-    const requestData = {
-      type: 'remove_from_watchlist',
-    };
-    return this.request(`/api/users/${userId}/watchlist/${auctionId}`, {
-      method: 'DELETE',
-      body: JSON.stringify(requestData),
-    });
-  }
-
-  // ========== MESSAGES ==========
-
-  async getMessages(userId) {
-    return this.request(`/api/users/${userId}/messages`);
-  }
-
-  async sendMessage(messageData) {
-    const requestData = {
-      type: 'send_message',
-      ...messageData,
-    };
-    return this.request('/api/messages', {
-      method: 'POST',
-      body: JSON.stringify(requestData),
-    });
-  }
-
-  // ========== SELLER ANALYTICS ==========
-
-  async getSellerAnalytics(userId) {
-    return this.request(`/api/sellers/${userId}/analytics`);
-  }
-
-  async getEarnings(userId) {
-    return this.request(`/api/sellers/${userId}/earnings`);
   }
 }
 

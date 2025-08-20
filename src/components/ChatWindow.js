@@ -527,7 +527,7 @@ Be specific and accurate. If you cannot determine certain information, indicate 
               <div className="p-3">
                 {msg.isImageAnalysis && msg.analysisData ? (
                   <>
-                    <div className="whitespace-pre-line mb-2">{msg.text}</div>
+                    {/* <div className="whitespace-pre-line mb-2">{msg.text}</div> */}
                     <AnalysisCard data={msg.analysisData} />
                   </>
                 ) : (

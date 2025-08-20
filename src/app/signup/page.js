@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUserRole } from '@/contexts/RoleContext'
-import AuctionAPI from '@/lib/auctionAPI'
+import auctionAPI from '@/lib/auctionAPI'
 import Navbar from '@/components/Navbar'
 
 export default function SignupPage() {
@@ -15,6 +15,7 @@ export default function SignupPage() {
     email: '',
     password: '',
     confirmPassword: ''
+    // ✅ REMOVED: role field (not in API doc)
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
@@ -70,24 +71,36 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const api = new AuctionAPI()
-      const data = await api.register({
+      console.log('🚀 Starting registration with excellwebsolution.com API...')
+      
+      // ✅ FIXED: Send data matching API doc format
+      const userData = {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        role: 'buyer' // or get from a form field if you have role selection
-      })
-
-      // Store token and user data
-      localStorage.setItem('auth-token', data.token)
-      if (data.user) {
-        setUser(data.user)
+        // ✅ REMOVED: role field (not in API doc)
       }
 
-      // Redirect to dashboard
+      console.log('📤 Sending registration data:', userData)
+
+      const response = await auctionAPI.register(userData)
+      
+      console.log('✅ Registration successful:', response)
+
+      // ✅ FIXED: Set user data from response format
+      const user = {
+        id: response._id,
+        name: response.name,
+        email: response.email,
+      }
+      setUser(user)
+
+      // Show success and redirect
+      alert('Account created successfully!')
       router.push('/dashboard')
       
     } catch (err) {
+      console.error('❌ Registration error:', err)
       setErrors({ submit: err.message || 'An error occurred during registration' })
     } finally {
       setLoading(false)
@@ -96,7 +109,6 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white">
-      {/* Use Navbar Component */}
       <Navbar />
 
       <div className="flex items-center justify-center min-h-[calc(100vh-64px)] sm:min-h-[calc(100vh-80px)] px-4 sm:px-6 py-6 sm:py-8">
@@ -104,7 +116,7 @@ export default function SignupPage() {
           {/* Header */}
           <div className="text-center mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Join Rock the Auction</h1>
-            <p className="text-gray-400 text-sm sm:text-base">Create your account and start trading</p>
+            <p className="text-gray-400 text-sm sm:text-base">Create your account and start bidding</p>
           </div>
 
           {/* Error Alert */}
@@ -259,18 +271,6 @@ export default function SignupPage() {
               )}
             </div>
 
-            {/* Password Strength Indicator */}
-            {formData.password && (
-              <div className="space-y-2">
-                <div className="text-xs text-gray-400">Password strength:</div>
-                <div className="flex gap-1">
-                  <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 6 ? 'bg-orange-500' : 'bg-gray-600'}`} />
-                  <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 8 && /[A-Z]/.test(formData.password) ? 'bg-orange-500' : 'bg-gray-600'}`} />
-                  <div className={`h-1 flex-1 rounded-full ${formData.password.length >= 8 && /[A-Z]/.test(formData.password) && /[0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-600'}`} />
-                </div>
-              </div>
-            )}
-
             {/* Submit Button */}
             <button
               type="submit"
@@ -299,16 +299,6 @@ export default function SignupPage() {
                 Sign in here
               </Link>
             </p>
-            
-            {/* Terms and Privacy */}
-            <div className="pt-3 border-t border-[#232326]">
-              <p className="text-xs text-gray-500">
-                By creating an account, you agree to our{' '}
-                <Link href="/terms" className="text-orange-400 hover:text-orange-300 transition-colors">Terms of Service</Link>
-                {' '}and{' '}
-                <Link href="/privacy" className="text-orange-400 hover:text-orange-300 transition-colors">Privacy Policy</Link>
-              </p>
-            </div>
           </div>
         </div>
       </div>
