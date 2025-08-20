@@ -51,12 +51,24 @@ export default function Navbar() {
             >
               Categories
             </Link>
+            {isAuthenticated && (
+              <>
                 <Link
                   href="/dashboard"
                   className="text-gray-300 hover:text-orange-400 transition text-sm lg:text-base"
                 >
                   Dashboard
                 </Link>
+                {user?.role === 'admin' && (
+                  <Link
+                    href="/admin"
+                    className="text-gray-300 hover:text-orange-400 transition text-sm lg:text-base"
+                  >
+                    Admin Panel
+                  </Link>
+                )}
+              </>
+            )}
             <Link
               href="/about"
               className="text-gray-300 hover:text-orange-400 transition text-sm lg:text-base"
@@ -153,6 +165,8 @@ export default function Navbar() {
                 Auctions
               </Link>
 
+              {isAuthenticated && (
+                <>
                   <Link
                     href="/dashboard"
                     className="text-gray-300 hover:text-orange-400 transition py-2 text-base"
@@ -160,6 +174,17 @@ export default function Navbar() {
                   >
                     Dashboard
                   </Link>
+                  {user?.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      className="text-gray-300 hover:text-orange-400 transition py-2 text-base"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Admin Panel
+                    </Link>
+                  )}
+                </>
+              )}
                   <Link
                     href="/about"
                     className="text-gray-300 hover:text-orange-400 transition py-2 text-base"

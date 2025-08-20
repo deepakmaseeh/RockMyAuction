@@ -127,11 +127,11 @@ export function middleware(request) {
   }
   
   // If user tries to access protected page without auth, redirect to login
-  if (isProtectedPath && !isLoggedIn) {
-    console.log('🔒 Redirecting unauthenticated user to login')
-    const callbackUrl = encodeURIComponent(pathname)
-    return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, request.url))
-  }
+  // if (isProtectedPath && !isLoggedIn) {
+  //   console.log('🔒 Redirecting unauthenticated user to login')
+  //   const callbackUrl = encodeURIComponent(pathname)
+  //   return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, request.url))
+  // }
   
   // Allow all other requests
   return NextResponse.next()

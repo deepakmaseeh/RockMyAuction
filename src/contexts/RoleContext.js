@@ -5,24 +5,34 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const RoleContext = createContext()
 
 export function RoleProvider({ children }) {
-  const [currentRole, setCurrentRole] = useState('buyer') // Default to buyer
-  const [user, setUser] = useState(null) // ✅ FIXED: Start with null instead of hardcoded data
-  const [isAuthenticated, setIsAuthenticated] = useState(false) // ✅ ADDED: Track auth state
+  const [currentRole, setCurrentRole] = useState('buyer')
+  const [user, setUser] = useState(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [loading, setLoading] = useState(true) // ✅ ADDED: Loading state
 
-  // ✅ FIXED: Check for stored user data on mount
+  // ✅ FIXED: Check for stored auth data on mount and keep user logged in
   useEffect(() => {
     const checkAuthState = () => {
       try {
-        // Check for stored auth token
         const token = localStorage.getItem('auth-token')
         const storedUser = localStorage.getItem('user-data')
         const savedRole = localStorage.getItem('preferredRole')
+
+        console.log('🔍 Checking auth state:', {
+          hasToken: !!token,
+          hasUserData: !!storedUser,
+          savedRole
+        })
 
         if (token && storedUser) {
           const userData = JSON.parse(storedUser)
           setUser(userData)
           setIsAuthenticated(true)
-          console.log('🔄 Restored user from localStorage:', userData)
+          console.log('🔄 User restored from localStorage:', userData)
+        } else {
+          setUser(null)
+          setIsAuthenticated(false)
+          console.log('❌ No valid auth data found')
         }
 
         if (savedRole && (savedRole === 'buyer' || savedRole === 'seller')) {
@@ -34,6 +44,10 @@ export function RoleProvider({ children }) {
         localStorage.removeItem('auth-token')
         localStorage.removeItem('user-data')
         localStorage.removeItem('preferredRole')
+        setUser(null)
+        setIsAuthenticated(false)
+      } finally {
+        setLoading(false) // ✅ FIXED: Set loading to false after check
       }
     }
 
@@ -48,18 +62,19 @@ export function RoleProvider({ children }) {
     }
   }
 
-  // ✅ ADDED: Update user function (called from login/signup)
+  // ✅ FIXED: Update user function
   const updateUser = (userData) => {
+    console.log('👤 Updating user in context:', userData)
     setUser(userData)
     setIsAuthenticated(true)
     
     // Store in localStorage
     localStorage.setItem('user-data', JSON.stringify(userData))
-    console.log('👤 User updated in context:', userData)
   }
 
-  // ✅ ADDED: Logout function
+  // ✅ FIXED: Logout function
   const logout = () => {
+    console.log('🚪 Logging out user')
     setUser(null)
     setIsAuthenticated(false)
     setCurrentRole('buyer')
@@ -69,7 +84,10 @@ export function RoleProvider({ children }) {
     localStorage.removeItem('user-data')
     localStorage.removeItem('preferredRole')
     
-    console.log('🚪 User logged out')
+    // Redirect to home
+    if (typeof window !== 'undefined') {
+      window.location.href = '/'
+    }
   }
 
   // ✅ ADDED: Login function (for compatibility)
@@ -80,10 +98,11 @@ export function RoleProvider({ children }) {
   const value = {
     // User state
     user,
-    setUser: updateUser, // ✅ FIXED: Use updateUser function
+    setUser: updateUser,
     isAuthenticated,
-    login, // ✅ ADDED: For backward compatibility
-    logout, // ✅ ADDED: Logout function
+    loading, // ✅ ADDED: Expose loading state
+    login,
+    logout,
     
     // Role state  
     currentRole,
@@ -91,7 +110,7 @@ export function RoleProvider({ children }) {
     isBuyer: currentRole === 'buyer',
     isSeller: currentRole === 'seller',
     
-    // ✅ ADDED: Computed values
+    // Computed values
     userName: user?.name || 'Guest',
     userEmail: user?.email || '',
     userId: user?.id || null,
@@ -108,7 +127,7 @@ export function useUserRole() {
   return context
 }
 
-// ✅ ADDED: Custom hook for auth state
+// Custom hook for auth state
 export function useAuth() {
   const context = useContext(RoleContext)
   if (!context) {
@@ -118,6 +137,7 @@ export function useAuth() {
   return {
     user: context.user,
     isAuthenticated: context.isAuthenticated,
+    loading: context.loading,
     login: context.login,
     logout: context.logout,
     userName: context.userName,
