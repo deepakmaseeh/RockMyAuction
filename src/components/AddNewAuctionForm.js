@@ -537,7 +537,7 @@ export default function AddNewAuctionForm() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  // ✅ ENHANCED IMAGE UPLOAD WITH S3 AND AI INTEGRATION
+  // ✅ ENHANCED IMAGE UPLOAD WITH BETTER ERROR HANDLING
   const handleImageUpload = async (file) => {
     if (!file) return
 
@@ -578,6 +578,7 @@ export default function AddNewAuctionForm() {
         console.log('🚀 Starting image upload and AI analysis...')
 
         // 1. Get pre-signed URL from S3 upload API
+        console.log('📤 Getting presigned URL...')
         const presignedResponse = await fetch('/api/s3-upload', {
           method: 'POST',
           headers: {
@@ -590,7 +591,9 @@ export default function AddNewAuctionForm() {
         })
 
         if (!presignedResponse.ok) {
-          throw new Error('Failed to get upload URL')
+          const errorText = await presignedResponse.text()
+          console.error('❌ Presigned URL error:', errorText)
+          throw new Error(`Failed to get upload URL: ${errorText}`)
         }
 
         const { url, key, fileUrl } = await presignedResponse.json()
@@ -611,7 +614,7 @@ export default function AddNewAuctionForm() {
         })
 
         if (!uploadResponse.ok) {
-          throw new Error('Failed to upload image to S3')
+          throw new Error(`Failed to upload image to S3: ${uploadResponse.status} ${uploadResponse.statusText}`)
         }
 
         // ✅ Store the S3 URL for database storage
@@ -620,6 +623,11 @@ export default function AddNewAuctionForm() {
 
         // 3. Call AI analysis with the uploaded image
         console.log('🤖 Starting AI analysis...')
+        console.log('📊 Debug - AI request payload:', { 
+          imageKey: key, 
+          imageUrl: fileUrl 
+        })
+
         const analysisResponse = await fetch('/api/analyze-image', {
           method: 'POST',
           headers: {
@@ -630,6 +638,14 @@ export default function AddNewAuctionForm() {
             imageUrl: fileUrl 
           }),
         })
+
+        console.log('📊 Debug - AI response status:', analysisResponse.status)
+
+        if (!analysisResponse.ok) {
+          const errorText = await analysisResponse.text()
+          console.error('❌ AI API Error Response:', errorText)
+          throw new Error(`AI analysis failed: ${errorText}`)
+        }
 
         const result = await analysisResponse.json()
         
@@ -1079,3 +1095,4 @@ export default function AddNewAuctionForm() {
     </form>
   )
 }
+
