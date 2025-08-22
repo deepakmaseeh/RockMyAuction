@@ -206,7 +206,7 @@
 //     <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326]">
 //       <h3 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Quick Actions</h3>
 //       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-//         {actions.map((a, i) => (
+//         {actions.filter(a => !a.adminOnly || (a.adminOnly && user?.isAdmin)).map((a, i) => (
 //           <button
 //             key={i}
 //             onClick={() => (window.location.href = a.href)}
@@ -609,7 +609,8 @@ function QuickActions({ role }) {
     { name: 'List New Item', shortName: 'Add Item', href: '/seller/new-auction', icon: PlusIcon, color: 'bg-green-600' },
     { name: 'Manage Listings', shortName: 'Manage', href: '/seller/active-auctions', icon: ClipboardListIcon, color: 'bg-blue-600' },
     { name: 'View Analytics', shortName: 'Analytics', href: '/seller/analytics', icon: ChartBarIcon, color: 'bg-purple-600' },
-    { name: 'Messages', shortName: 'Messages', href: '/messages', icon: ChatIcon, color: 'bg-orange-600' }
+    { name: 'Messages', shortName: 'Messages', href: '/messages', icon: ChatIcon, color: 'bg-orange-600' },
+    { name: 'Admin Panel', shortName: 'Admin', href: '/admin', icon: EyeIcon, color: 'bg-red-600', adminOnly: true }
   ]
   const buyer = [
     { name: 'Browse Auctions', shortName: 'Browse', href: '/auctions', icon: SearchIcon, color: 'bg-blue-600' },
@@ -618,6 +619,7 @@ function QuickActions({ role }) {
     { name: 'Messages', shortName: 'Messages', href: '/messages', icon: ChatIcon, color: 'bg-orange-600' }
   ]
   const actions = role === 'seller' ? seller : buyer
+  const { user } = useUserRole() // Get user from context
 
   return (
     <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326]">

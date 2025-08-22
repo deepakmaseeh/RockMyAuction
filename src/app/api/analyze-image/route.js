@@ -1,190 +1,98 @@
-import OpenAI from 'openai'
 import { NextResponse } from 'next/server'
-import sharp from 'sharp'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
-const auctionCategories = [
-  "Electronics",
-  "Art & Collectibles", 
-  "Jewelry & Watches",
-  "Antiques & Vintage",
-  "Fashion & Accessories",
-  "Home & Garden",
-  "SportsToys & Games",
-  "Musical Instruments",
-  "Photography Equipment",
-  "Automotive Parts",
-  "Memorabilia",
-  "Furniture",
-  "Tools & Equipment"
-]
+if (!GEMINI_API_KEY) {
+  console.warn('GEMINI_API_KEY is not set. /api/analyze-image will fail.')
+}
+
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null
 
 export async function POST(request) {
   try {
-    let buffer;
-    let contentType;
-    
-    // Check if the request is JSON (S3 URL) or FormData (direct upload)
-    const contentTypeHeader = request.headers.get('content-type') || '';
-    
-    if (contentTypeHeader.includes('application/json')) {
-      // Handle S3 URL case
-      const { imageKey, imageUrl } = await request.json();
-      
-      if (!imageKey && !imageUrl) {
-        return NextResponse.json({ error: 'No image key or URL provided' }, { status: 400 });
-      }
-      
-      // If imageUrl is provided, fetch the image directly
-      if (imageUrl) {
-        const response = await fetch(imageUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image from URL: ${response.statusText}`);
+    if (!genAI) {
+      return NextResponse.json({ success: false, error: 'Server misconfigured: missing GEMINI_API_KEY' }, { status: 500 })
+    }
+
+    const { imageUrl, imageKey } = await request.json()
+
+    if (!imageUrl || !(imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+      return NextResponse.json({ success: false, error: 'imageUrl is required and must be http(s)' }, { status: 400 })
+    }
+
+    // Fetch image and convert to base64 for inlineData
+    const res = await fetch(imageUrl)
+    if (!res.ok) {
+      return NextResponse.json({ success: false, error: `Failed to fetch image (${res.status})` }, { status: 400 })
+    }
+
+    // Cap extremely large files (basic safeguard)
+    const contentLength = Number(res.headers.get('content-length') || 0)
+    const MAX_BYTES = 10 * 1024 * 1024 // 10MB
+    if (contentLength && contentLength > MAX_BYTES) {
+      return NextResponse.json({ success: false, error: 'Image too large (>10MB)' }, { status: 400 })
+    }
+
+    const contentTypeHeader = res.headers.get('content-type') || ''
+    // Fallback to jpeg if unknown
+    const mimeType = contentTypeHeader.startsWith('image/') ? contentTypeHeader : 'image/jpeg'
+
+    const arrayBuf = await res.arrayBuffer()
+    const base64 = Buffer.from(arrayBuf).toString('base64')
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+
+    const prompt = `Analyze this auction item image and respond ONLY with a valid JSON object:
+{
+  "title": "Compelling title (<= 60 chars)",
+  "description": "Detailed description (<= 300 chars)",
+  "category": "One of: Electronics, Art & Collectibles, Jewelry & Watches, Antiques & Vintage, Fashion & Accessories, Home & Garden, Sports & Recreation, Books & Media, Toys & Games, Musical Instruments, Photography Equipment, Automotive Parts, Memorabilia, Furniture, Tools & Equipment",
+  "condition": "New | Like New | Good | Fair | Poor",
+  "keyFeatures": ["feature1", "feature2", "feature3"],
+  "suggestedStartingBid": "numeric string like 25 or 25.00",
+  "estimatedValue": "range string like $50-100 or $120"
+}
+Do not include markdown fences. Ensure strict JSON.`
+
+    const result = await model.generateContent([
+      { text: prompt },
+      {
+        inlineData: {
+          mimeType,
+          data: base64,
         }
-        buffer = Buffer.from(await response.arrayBuffer());
-        contentType = response.headers.get('content-type');
-      } 
-      // If imageKey is provided, fetch from S3
-      else if (imageKey) {
-        // Get image from S3
-        const command = new GetObjectCommand({
-          Bucket: process.env.S3_BUCKET_NAME,
-          Key: imageKey,
-        });
-
-        const { Body, ContentType } = await s3Client.send(command);
-        buffer = Buffer.from(await Body.transformToByteArray());
-        contentType = ContentType;
       }
-    } else {
-      // Handle direct file upload case (backward compatibility)
-      const formData = await request.formData();
-      const file = formData.get('image');
-      
-      if (!file || !file.type.startsWith('image/')) {
-        return NextResponse.json({ error: 'No valid image file provided' }, { status: 400 });
-      }
+    ])
 
-      // Convert file to buffer
-      const bytes = await file.arrayBuffer();
-      buffer = Buffer.from(bytes);
-      contentType = file.type;
-    }
-    
-    // Validate we have an image buffer
-    if (!buffer) {
-      return NextResponse.json({ error: 'Failed to process image' }, { status: 400 });
-    }
-    
-    // Optimize image using sharp
-    const optimizedBuffer = await sharp(buffer)
-      .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85 })
-      .toBuffer()
+    const text = result?.response?.text?.() || ''
 
-    // Convert to base64 for OpenAI API
-    const base64Image = optimizedBuffer.toString('base64')
-
-    // Create AI prompt for auction item analysis
-    const prompt = `Analyze this auction item image and provide the following information in JSON format:
-
-    {
-      "title": "A compelling, descriptive title for this auction item (max 60 characters)",
-      "category": "Choose the most appropriate category from: ${auctionCategories.join(', ')}",
-      "description": "A detailed, professional auction description highlighting key features, condition, materials, brand, age/era, and unique selling points (150-300 words)",
-      "estimatedValue": "Provide a rough market value range in USD (e.g., '$100-200' or '$500-1000')",
-      "condition": "Estimate condition: Excellent, Very Good, Good, Fair, or Poor",
-      "keyFeatures": ["List 3-5 key features or selling points as an array"],
-      "suggestedStartingBid": "Suggest a reasonable starting bid amount in USD"
-    }
-
-    Focus on auction-specific details that would help buyers make informed decisions. Be accurate and professional.`
-
-    // Call OpenAI Vision API with proper error handling
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Using cost-effective vision model
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Image}`,
-                detail: "high"
-              },
-            },
-          ],
-        },
-      ],
-      max_tokens: 1000,
-      temperature: 0.3,
-    })
-
-    // Parse the AI response
-    const aiContent = response.choices[0].message.content
-    
-    let analysisResult
+    // Strip markdown fences if any, then parse
+    const cleaned = text.replace(/``````/g, '').trim()
+    let analysis
     try {
-      // Extract JSON from response
-      const jsonMatch = aiContent.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        analysisResult = JSON.parse(jsonMatch[0])
+      analysis = JSON.parse(cleaned)
+    } catch (e) {
+      // Attempt to salvage: find first {...} block
+      const match = cleaned.match(/\{[\s\S]*\}/)
+      if (match) {
+        analysis = JSON.parse(match[0])
       } else {
-        throw new Error('No JSON found in response')
-      }
-    } catch (parseError) {
-      // Fallback if JSON parsing fails
-      console.error('JSON parsing failed:', parseError)
-      analysisResult = {
-        title: "Auction Item - Please Add Title",
-        category: "Art & Collectibles",
-        description: "Please add a description for this auction item.",
-        estimatedValue: "To be determined",
-        condition: "Good",
-        keyFeatures: ["Unique item", "Good condition"],
-        suggestedStartingBid: "$10"
+        throw new Error('AI did not return valid JSON')
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      analysis: analysisResult,
-      usage: response.usage
-    })
+    // Minimal normalization
+    if (analysis?.suggestedStartingBid) {
+      analysis.suggestedStartingBid = String(analysis.suggestedStartingBid).replace(/[^\d.]/g, '')
+    }
+    if (!Array.isArray(analysis?.keyFeatures)) {
+      analysis.keyFeatures = []
+    }
 
+    return NextResponse.json({ success: true, analysis: { ...analysis, imageKey: imageKey || null } })
   } catch (error) {
-    console.error('AI Analysis Error:', error)
-    
-    // Handle specific OpenAI errors
-    if (error.code === 'insufficient_quota') {
-      return NextResponse.json(
-        { error: 'OpenAI API quota exceeded. Please check your billing.' },
-        { status: 429 }
-      )
-    }
-    
-    if (error.code === 'invalid_api_key') {
-      return NextResponse.json(
-        { error: 'Invalid OpenAI API key. Please check your configuration.' },
-        { status: 401 }
-      )
-    }
-
-    return NextResponse.json(
-      { error: 'Failed to analyze image. Please try again.' },
-      { status: 500 }
-    )
+    console.error('AI analysis error:', error)
+    return NextResponse.json({ success: false, error: error.message || 'Failed to analyze image' }, { status: 500 })
   }
 }
-
-// Important: Remove the multer config entirely
-// export const config = {
-//   api: {
-//     bodyParser: false, // NOT NEEDED with native FormData
-//   },
-// }

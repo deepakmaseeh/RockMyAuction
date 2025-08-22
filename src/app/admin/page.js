@@ -1,9 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import Navbar from '@/components/Navbar'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Navbar from '@/components/Navbar'
+import OverviewTab from '@/components/admin/OverviewTab'
+import UserManagementTab from '@/components/admin/UserManagementTab'
+import AuctionManagementTab from '@/components/admin/AuctionManagementTab';
+import ReportsTab from '@/components/admin/ReportsTab';
+import SystemHealthTab from '@/components/admin/SystemHealthTab';
 
 export default function AdminDashboardPage() {
   const router = useRouter()
@@ -198,7 +203,7 @@ export default function AdminDashboardPage() {
                         <div
                           key={i}
                           className="bg-orange-500 w-1 sm:w-2 rounded-t transition-all"
-                          style={{ height: `${Math.random() * 150 + 20}px` }}
+                          style={{ height: `100px` }}
                         />
                       ))}
                     </div>

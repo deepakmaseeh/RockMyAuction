@@ -278,7 +278,8 @@ export default function LoginPage() {
         rating: 4.5,
         totalSales: 0,
         totalPurchases: 0,
-        verified: false
+        verified: false,
+        role: 'admin' // Temporarily set user as admin for testing
       }
 
       // Set user in context

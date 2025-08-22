@@ -171,12 +171,19 @@ export default function ProfilePage() {
             </div>
 
             {/* Action Button */}
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base w-full sm:w-auto"
-            >
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              {user?.isAdmin && (
+                <Link href="/admin" className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base text-center w-full sm:w-auto">
+                  Admin Panel
+                </Link>
+              )}
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base w-full sm:w-auto"
+              >
+                {isEditing ? 'Cancel' : 'Edit Profile'}
+              </button>
+            </div>
           </div>
         </div>
 
