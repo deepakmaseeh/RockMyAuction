@@ -203,7 +203,7 @@ export default function AdminDashboardPage() {
                         <div
                           key={i}
                           className="bg-orange-500 w-1 sm:w-2 rounded-t transition-all"
-                          style={{ height: `100px` }}
+                          style={{ height: `${Math.random() * 150 + 20}px` }}
                         />
                       ))}
                     </div>

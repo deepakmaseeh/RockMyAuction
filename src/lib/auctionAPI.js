@@ -305,6 +305,37 @@ class AuctionAPI {
       body: JSON.stringify({ prompt }),
     });
   }
+
+  // Add inside AuctionAPI class in your existing file
+
+// Fetch all users (for admin)
+async getAllUsers() {
+  return this.request('/api/users', {
+    method: 'GET',
+  });
+}
+
+// Block a user
+async blockUser(userId) {
+  return this.request(`/api/users/${userId}/block`, {
+    method: 'PUT',
+  });
+}
+
+// Deactivate a user
+async deactivateUser(userId) {
+  return this.request(`/api/users/${userId}/deactivate`, {
+    method: 'PUT',
+  });
+}
+
+// Delete a user
+async deleteUser(userId) {
+  return this.request(`/api/users/${userId}`, {
+    method: 'DELETE',
+  });
+}
+
 }
 
 export const auctionAPI = new AuctionAPI();

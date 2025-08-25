@@ -1,110 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import Navbar from '@/components/Navbar'
+import auctionAPI from '@/lib/auctionAPI'
 
-// Mock data (self-contained to avoid import errors)
-const mockAuctions = [
-  {
-    id: 1,
-    title: "Vintage Rolex Datejust Third Hand",
-    image: "/assets/PB-4.jpg",
-    currentBid: 2550,
-    timeLeft: "2h 30m",
-    status: "LIVE NOW",
-    bids: 45,
-    seller: "LuxuryTimepieces",
-    category: "Watches",
-    endTime: new Date(Date.now() + 2.5 * 60 * 60 * 1000)
-  },
-  {
-    id: 2,
-    title: "KAWS Companion (Flayed) Limited Edition",
-    image: "/assets/PB-3.jpg",
-    currentBid: 850,
-    timeLeft: "4h 15m",
-    status: "LIVE NOW",
-    bids: 22,
-    seller: "ArtCollective",
-    category: "Art",
-    endTime: new Date(Date.now() + 4.25 * 60 * 60 * 1000)
-  },
-  {
-    id: 3,
-    title: "Air Jordan 1 Retro High OG Chicago",
-    image: "/assets/PB-3.jpg",
-    currentBid: 1200,
-    timeLeft: "1h 45m",
-    status: "LIVE NOW",
-    bids: 67,
-    seller: "SneakerVault",
-    category: "Sneakers",
-    endTime: new Date(Date.now() + 1.75 * 60 * 60 * 1000)
-  },
-  {
-    id: 4,
-    title: "First Edition Harry Potter & Philosopher's Stone",
-    image: "/assets/PB-3.jpg",
-    currentBid: 3500,
-    timeLeft: "6h 20m",
-    status: "LIVE NOW",
-    bids: 38,
-    seller: "RareBooksCollector",
-    category: "Books",
-    endTime: new Date(Date.now() + 6.33 * 60 * 60 * 1000)
-  },
-  {
-    id: 5,
-    title: "1960 Topps Mickey Mantle Baseball Card",
-    image: "/assets/PB-3.jpg",
-    currentBid: 4200,
-    timeLeft: "3h 10m",
-    status: "LIVE NOW",
-    bids: 89,
-    seller: "SportsCardsDepot",
-    category: "Sports Cards",
-    endTime: new Date(Date.now() + 3.17 * 60 * 60 * 1000)
-  },
-  {
-    id: 6,
-    title: "Vintage 1961 Fender Stratocaster",
-    image: "/assets/PB-2.jpg",
-    currentBid: 15500,
-    timeLeft: "8h 45m",
-    status: "LIVE NOW",
-    bids: 156,
-    seller: "VintageGuitars",
-    category: "Musical Instruments",
-    endTime: new Date(Date.now() + 8.75 * 60 * 60 * 1000)
-  },
-  {
-    id: 7,
-    title: "Abstract Kinetic Sculpture by Arya",
-    image: "/assets/PB-3.jpg",
-    currentBid: 2800,
-    timeLeft: "5h 30m",
-    status: "LIVE NOW",
-    bids: 34,
-    seller: "ModernArtStudy",
-    category: "Sculpture",
-    endTime: new Date(Date.now() + 5.5 * 60 * 60 * 1000)
-  },
-  {
-    id: 8,
-    title: "Penny Black 1840 Stamp (Mint Condition)",
-    image: "/assets/PB-2.jpg",
-    currentBid: 6800,
-    timeLeft: "12h 15m",
-    status: "LIVE NOW",
-    bids: 92,
-    seller: "PhilatelyCorner",
-    category: "Stamps",
-    endTime: new Date(Date.now() + 12.25 * 60 * 60 * 1000)
-  }
-]
-
+// Mock featured auction (keep as fallback)
 const featuredAuction = {
   id: 99,
   title: "The Midnight Chronograph",
@@ -116,14 +19,15 @@ const featuredAuction = {
   status: "FEATURED"
 }
 
-// Mobile-optimized AuctionCard Component
+// ✅ FIXED: Mobile-optimized AuctionCard Component with seller error fix
 function AuctionCard({ auction }) {
+  const router = useRouter()
   const [timeLeft, setTimeLeft] = useState('')
 
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date().getTime()
-      const endTime = new Date(auction.endTime).getTime()
+      const endTime = new Date(auction.endDate || auction.endTime).getTime()
       const difference = endTime - now
 
       if (difference > 0) {
@@ -146,17 +50,40 @@ function AuctionCard({ auction }) {
     calculateTimeLeft()
     const timer = setInterval(calculateTimeLeft, 1000)
     return () => clearInterval(timer)
-  }, [auction.endTime])
+  }, [auction.endDate, auction.endTime])
 
   const isUrgent = timeLeft.includes('m') && !timeLeft.includes('h') && parseInt(timeLeft) < 30
   const isEnded = timeLeft === 'ENDED'
+
+  // ✅ FIXED: Safely get seller name and first character
+  const getSeller = () => {
+    // Check different possible seller field names from your API
+    const seller = auction.seller || auction.sellerId || auction.createdBy || auction.owner
+    
+    if (seller) {
+      // If seller is an object (like { name: "John", _id: "123" })
+      if (typeof seller === 'object' && seller.name) {
+        return seller.name
+      }
+      // If seller is a string
+      if (typeof seller === 'string') {
+        return seller
+      }
+    }
+    return 'Unknown Seller'
+  }
+
+  const getSellerInitial = () => {
+    const sellerName = getSeller()
+    return sellerName.charAt(0).toUpperCase()
+  }
 
   return (
     <div className="bg-[#18181B] rounded-lg sm:rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all duration-300 group overflow-hidden">
       {/* Status Badge */}
       <div className="relative">
         <img
-          src={auction.image || '/placeholder-auction.jpg'}
+          src={auction.images?.[0] || auction.image || '/placeholder-auction.jpg'}
           alt={auction.title}
           className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
@@ -167,11 +94,11 @@ function AuctionCard({ auction }) {
             isUrgent ? 'bg-red-500 text-white animate-pulse' : 
             'bg-green-500 text-white'
           }`}>
-            {isEnded ? 'ENDED' : auction.status}
+            {isEnded ? 'ENDED' : 'LIVE NOW'}
           </span>
         </div>
         <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
-          {auction.bids} bids
+          {auction.bidCount || auction.bids?.length || 0} bids
         </div>
       </div>
 
@@ -184,7 +111,7 @@ function AuctionCard({ auction }) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex-1">
             <div className="text-lg sm:text-2xl font-bold text-orange-400">
-              ${auction.currentBid.toLocaleString()}
+              ${(auction.currentBid || auction.startingPrice || 0).toLocaleString()}
             </div>
             <div className="text-xs text-gray-400">Current Bid</div>
           </div>
@@ -199,19 +126,19 @@ function AuctionCard({ auction }) {
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              {auction.seller.charAt(0)}
+              {getSellerInitial()}
             </div>
-            <span className="text-xs sm:text-sm text-gray-400 truncate">{auction.seller}</span>
+            <span className="text-xs sm:text-sm text-gray-400 truncate">{getSeller()}</span>
           </div>
           <span className="text-xs bg-[#232326] text-gray-300 px-2 py-1 rounded flex-shrink-0">
-            {auction.category}
+            {auction.category || 'General'}
           </span>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <Link
-            href={`/auctions/${auction.id}`}
+          <button
+            onClick={() => router.push(`/auctions/${auction._id || auction.id}`)}
             className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium text-center transition text-sm sm:text-base touch-manipulation ${
               isEnded 
                 ? 'bg-gray-600 text-gray-300 cursor-not-allowed' 
@@ -219,7 +146,7 @@ function AuctionCard({ auction }) {
             }`}
           >
             {isEnded ? 'View Results' : 'Place Bid'}
-          </Link>
+          </button>
           <button className="p-2 bg-[#232326] hover:bg-[#2a2a2e] active:bg-[#323238] text-gray-300 rounded-lg transition touch-manipulation">
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -328,11 +255,53 @@ function SearchFilters({
 
 // Main Auctions Page Component
 export default function AuctionsPage() {
-  const [auctions, setAuctions] = useState(mockAuctions)
-  const [filteredAuctions, setFilteredAuctions] = useState(mockAuctions)
+  const router = useRouter()
+  
+  // API Integration for Live Auctions
+  const [auctions, setAuctions] = useState([])
+  const [filteredAuctions, setFilteredAuctions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  
+  // Search and filter states
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [sortBy, setSortBy] = useState('ending-soon')
+
+  // Fetch Live Auctions from API
+  useEffect(() => {
+    const fetchLiveAuctions = async () => {
+      try {
+        setLoading(true)
+        setError('')
+        console.log('🔍 Fetching live auctions from API...')
+        
+        const data = await auctionAPI.getAuctions()
+        console.log('✅ Auctions data received:', data)
+        
+        // Handle both array format and object with auctions property
+        const auctionsList = Array.isArray(data) ? data : data.auctions || []
+        
+        // Filter only live/active auctions (not ended)
+        const liveAuctions = auctionsList.filter(auction => {
+          const endDate = new Date(auction.endDate || auction.endTime)
+          const now = new Date()
+          return endDate > now // Only show auctions that haven't ended
+        })
+        
+        setAuctions(liveAuctions)
+        console.log(`📊 ${liveAuctions.length} live auctions loaded`)
+        
+      } catch (err) {
+        console.error('❌ Failed to fetch auctions:', err)
+        setError('Failed to load live auctions. Please try again later.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLiveAuctions()
+  }, [])
 
   // Filter and search functionality
   useEffect(() => {
@@ -341,8 +310,8 @@ export default function AuctionsPage() {
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(auction =>
-        auction.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        auction.seller.toLowerCase().includes(searchTerm.toLowerCase())
+        auction.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        auction.description?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
@@ -355,13 +324,13 @@ export default function AuctionsPage() {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'ending-soon':
-          return a.endTime - b.endTime
+          return new Date(a.endDate || a.endTime) - new Date(b.endDate || b.endTime)
         case 'highest-bid':
-          return b.currentBid - a.currentBid
+          return (b.currentBid || b.startingPrice || 0) - (a.currentBid || a.startingPrice || 0)
         case 'most-bids':
-          return b.bids - a.bids
+          return (b.bidCount || b.bids?.length || 0) - (a.bidCount || a.bids?.length || 0)
         case 'newest':
-          return b.id - a.id
+          return new Date(b.createdAt || b.startDate || 0) - new Date(a.createdAt || a.startDate || 0)
         default:
           return 0
       }
@@ -370,7 +339,8 @@ export default function AuctionsPage() {
     setFilteredAuctions(filtered)
   }, [searchTerm, selectedCategory, sortBy, auctions])
 
-  const categories = ['All', 'Watches', 'Art', 'Sneakers', 'Books', 'Sports Cards', 'Musical Instruments', 'Sculpture', 'Stamps']
+  // Extract categories from API data
+  const categories = ['All', ...new Set(auctions.map(auction => auction.category).filter(Boolean))]
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white">
@@ -437,39 +407,65 @@ export default function AuctionsPage() {
         />
       </section>
 
-      {/* Live Auctions Grid */}
+      {/* Live Auctions Grid with API Integration */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
           <h2 className="text-2xl sm:text-3xl font-bold">Live Auctions</h2>
           <div className="flex items-center gap-2 text-green-400 self-start sm:self-auto">
             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium">{filteredAuctions.length} Live Auctions</span>
+            <span className="text-sm font-medium">
+              {loading ? 'Loading...' : `${filteredAuctions.length} Live Auctions`}
+            </span>
           </div>
         </div>
 
-        {filteredAuctions.length === 0 ? (
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <div className="text-4xl sm:text-6xl mb-4">⚠️</div>
+            <h3 className="text-xl sm:text-2xl font-bold mb-2 text-red-400">Error Loading Auctions</h3>
+            <p className="text-gray-400 text-sm sm:text-base mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-orange-500 hover:bg-orange-600 px-6 py-2 rounded-lg transition"
+            >
+              Retry
+            </button>
+          </div>
+        ) : filteredAuctions.length === 0 ? (
           <div className="text-center py-12 sm:py-16">
             <div className="text-4xl sm:text-6xl mb-4">🔍</div>
             <h3 className="text-xl sm:text-2xl font-bold mb-2">No auctions found</h3>
-            <p className="text-gray-400 text-sm sm:text-base">Try adjusting your search or filters</p>
+            <p className="text-gray-400 text-sm sm:text-base">
+              {auctions.length === 0 
+                ? 'No live auctions available at the moment. Check back soon!' 
+                : 'Try adjusting your search or filters'
+              }
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredAuctions.map((auction) => (
-              <AuctionCard key={auction.id} auction={auction} />
+              <AuctionCard key={auction._id || auction.id} auction={auction} />
             ))}
           </div>
         )}
 
-        {/* Load More Button */}
-        <div className="text-center mt-8 sm:mt-12">
-          <button 
-            onClick={() => alert('Load more functionality would be implemented here')}
-            className="bg-[#18181B] border border-[#232326] hover:border-orange-500 active:bg-[#232326] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base"
-          >
-            Load More Auctions
-          </button>
-        </div>
+        {/* Load More Button - Only show if there are results */}
+        {!loading && !error && filteredAuctions.length > 0 && (
+          <div className="text-center mt-8 sm:mt-12">
+            <button 
+              onClick={() => alert('Load more functionality would be implemented here')}
+              className="bg-[#18181B] border border-[#232326] hover:border-orange-500 active:bg-[#232326] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base"
+            >
+              Load More Auctions
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Mobile-optimized Newsletter Signup */}
