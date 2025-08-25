@@ -608,7 +608,6 @@
 //   )
 // }
 
-
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
@@ -636,6 +635,7 @@ const categories = [
 export default function AddNewAuctionForm() {
   const router = useRouter()
   const dropRef = useRef(null)
+  const cameraRef = useRef(null) // ✅ NEW: Camera input ref
 
   // Form state
   const [image, setImage] = useState(null)
@@ -660,14 +660,25 @@ export default function AddNewAuctionForm() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  // ✅ ADDED: Set default times when component loads
+  // ✅ NEW: Mobile detection state
+  const [isMobile, setIsMobile] = useState(false)
+
+  // ✅ NEW: Detect if device supports camera
   useEffect(() => {
-    // Set default start time to 1 hour from now
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera
+      const isMobileDevice = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
+      setIsMobile(isMobileDevice)
+    }
+    checkMobile()
+  }, [])
+
+  // Set default times when component loads
+  useEffect(() => {
     const now = new Date()
     const defaultStart = new Date(now.getTime() + 60 * 60 * 1000) // 1 hour from now
     const defaultEnd = new Date(defaultStart.getTime() + 24 * 60 * 60 * 1000) // 24 hours later
     
-    // Format for datetime-local input (YYYY-MM-DDTHH:MM)
     const formatDateTime = (date) => {
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -677,16 +688,15 @@ export default function AddNewAuctionForm() {
       return `${year}-${month}-${day}T${hours}:${minutes}`
     }
     
-    // Only set defaults if fields are empty
     if (!startTime) {
       setStartTime(formatDateTime(defaultStart))
     }
     if (!endTime) {
       setEndTime(formatDateTime(defaultEnd))
     }
-  }, []) // Run only once on mount
+  }, [])
 
-  // ✅ ENHANCED IMAGE UPLOAD WITH BETTER ERROR HANDLING
+  // ENHANCED IMAGE UPLOAD WITH BETTER ERROR HANDLING
   const handleImageUpload = async (file) => {
     if (!file) return
 
@@ -766,17 +776,12 @@ export default function AddNewAuctionForm() {
           throw new Error(`Failed to upload image to S3: ${uploadResponse.status} ${uploadResponse.statusText}`)
         }
 
-        // ✅ Store the S3 URL for database storage
+        // Store the S3 URL for database storage
         setImageUrl(fileUrl)
         console.log('✅ Image uploaded successfully:', fileUrl)
 
         // 3. Call AI analysis with the uploaded image
         console.log('🤖 Starting AI analysis...')
-        console.log('📊 Debug - AI request payload:', { 
-          imageKey: key, 
-          imageUrl: fileUrl 
-        })
-
         const analysisResponse = await fetch('/api/analyze-image', {
           method: 'POST',
           headers: {
@@ -787,8 +792,6 @@ export default function AddNewAuctionForm() {
             imageUrl: fileUrl 
           }),
         })
-
-        console.log('📊 Debug - AI response status:', analysisResponse.status)
 
         if (!analysisResponse.ok) {
           const errorText = await analysisResponse.text()
@@ -851,11 +854,24 @@ export default function AddNewAuctionForm() {
     e.stopPropagation()
   }
   
+  // ✅ NEW: Handle camera capture
+  const handleCameraClick = () => {
+    cameraRef.current.click()
+  }
+  
   const handleUploadClick = () => {
     dropRef.current.click()
   }
   
   const handleInputChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      handleImageUpload(file)
+    }
+  }
+
+  // ✅ NEW: Handle camera input change
+  const handleCameraChange = (e) => {
     const file = e.target.files[0]
     if (file) {
       handleImageUpload(file)
@@ -870,7 +886,7 @@ export default function AddNewAuctionForm() {
     }
   }
 
-  // ✅ FIXED: Form validation with better datetime handling
+  // Form validation
   const validateForm = () => {
     if (!imageUrl) {
       throw new Error('Please upload an image first.')
@@ -888,12 +904,10 @@ export default function AddNewAuctionForm() {
       throw new Error('Start and end times are required.')
     }
     
-    // ✅ FIXED: Better datetime validation
     const start = new Date(startTime)
     const end = new Date(endTime)
     const now = new Date()
     
-    // Check if dates are valid
     if (isNaN(start.getTime())) {
       throw new Error('Please enter a valid start time.')
     }
@@ -901,13 +915,11 @@ export default function AddNewAuctionForm() {
       throw new Error('Please enter a valid end time.')
     }
     
-    // ✅ FIXED: More flexible start time validation (allow starting soon)
     const minStartTime = new Date(now.getTime() + 5 * 60 * 1000) // 5 minutes from now
     if (start < minStartTime) {
       throw new Error('Start time must be at least 5 minutes in the future.')
     }
     
-    // ✅ FIXED: Ensure minimum auction duration
     const minDuration = 60 * 60 * 1000 // 1 hour minimum
     if (end <= start) {
       throw new Error('End time must be after start time.')
@@ -916,14 +928,13 @@ export default function AddNewAuctionForm() {
       throw new Error('Auction must run for at least 1 hour.')
     }
     
-    // ✅ OPTIONAL: Maximum auction duration (e.g., 30 days)
     const maxDuration = 30 * 24 * 60 * 60 * 1000 // 30 days
     if (end.getTime() - start.getTime() > maxDuration) {
       throw new Error('Auction cannot run for more than 30 days.')
     }
   }
 
-  // ✅ FORM SUBMISSION WITH API INTEGRATION
+  // FORM SUBMISSION WITH API INTEGRATION
   async function handleSubmit(e) {
     e.preventDefault()
     setSubmitting(true)
@@ -933,19 +944,16 @@ export default function AddNewAuctionForm() {
       console.log('🚀 Validating form...')
       validateForm()
 
-      // ✅ Prepare auction data for API
       const auctionData = {
         title: title.trim(),
         description: description.trim(),
         startingPrice: parseFloat(startingBid),
         endDate: new Date(endTime).toISOString(),
         category: category,
-        images: [imageUrl], // Store S3 URL in images array
-        // Optional fields based on your API
+        images: [imageUrl],
         startDate: new Date(startTime).toISOString(),
         quantity: parseInt(quantity) || 1,
         reservePrice: reservePrice ? parseFloat(reservePrice) : undefined,
-        // AI metadata (optional, for analytics)
         aiAnalysis: aiSuggestions ? {
           estimatedValue: aiSuggestions.estimatedValue,
           condition: aiSuggestions.condition,
@@ -953,7 +961,6 @@ export default function AddNewAuctionForm() {
         } : undefined
       }
 
-      // Remove undefined fields
       Object.keys(auctionData).forEach(key => {
         if (auctionData[key] === undefined) {
           delete auctionData[key]
@@ -962,15 +969,12 @@ export default function AddNewAuctionForm() {
 
       console.log('📤 Creating auction with data:', auctionData)
 
-      // ✅ Call your auction API
       const response = await auctionAPI.createAuction(auctionData)
       
       console.log('✅ Auction created successfully:', response)
 
-      // ✅ Success - redirect to the new auction or dashboard
       alert('🎉 Auction created successfully!')
       
-      // Redirect to the new auction detail page or dashboard
       const auctionId = response._id || response.id
       if (auctionId) {
         router.push(`/auctions/${auctionId}`)
@@ -1018,46 +1022,117 @@ export default function AddNewAuctionForm() {
             </span>
           </p>
           
-          <div
-            className={`bg-[#232326] rounded-lg flex flex-col items-center justify-center h-64 mb-4 border-2 border-dashed transition-colors cursor-pointer ${
-              isAnalyzing
-                ? 'border-orange-400 bg-orange-400/10'
-                : 'border-orange-500 hover:border-orange-400'
-            }`}
-            onDrop={handleDrop}
-            onDragOver={handleDrag}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onClick={handleUploadClick}
-          >
-            <input
-              type="file"
-              accept="image/*"
-              ref={dropRef}
-              style={{ display: "none" }}
-              onChange={handleInputChange}
-            />
-            
-            {isAnalyzing ? (
-              <div className="flex flex-col items-center text-orange-400">
-                <div className="animate-spin w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full mb-2"></div>
-                <span className="text-sm">AI is analyzing your image...</span>
+          {/* ✅ NEW: Upload Options - Mobile vs Desktop */}
+          {isMobile ? (
+            /* Mobile Upload Options */
+            <div className="space-y-4 mb-4">
+              {/* Camera and Gallery Buttons for Mobile */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handleCameraClick}
+                  className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg flex flex-col items-center gap-2 transition"
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-sm font-semibold">Take Photo</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  className="bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg flex flex-col items-center gap-2 transition"
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-sm font-semibold">Choose from Gallery</span>
+                </button>
               </div>
-            ) : preview ? (
-              <div className="flex flex-col items-center">
-                <img src={preview} alt="Preview" className="max-h-52 rounded mb-2" />
-                <span className="text-xs text-green-400">✅ Image uploaded to S3</span>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center text-gray-500">
-                <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004-4h10a4 4 0 004 4M7 10V4m0 6l4-4m-4 4l-4-4" />
-                </svg>
-                <span>Drag & drop or <span className="text-orange-400 underline">browse</span></span>
-                <span className="text-xs mt-1">AI will auto-generate title, category & description</span>
-              </div>
-            )}
-          </div>
+              
+              {/* Hidden file inputs for mobile */}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                ref={cameraRef}
+                style={{ display: "none" }}
+                onChange={handleCameraChange}
+              />
+              <input
+                type="file"
+                accept="image/*"
+                ref={dropRef}
+                style={{ display: "none" }}
+                onChange={handleInputChange}
+              />
+              
+              {/* Mobile Preview Area */}
+              {isAnalyzing ? (
+                <div className="bg-[#232326] rounded-lg flex flex-col items-center justify-center h-48 border-2 border-orange-400">
+                  <div className="animate-spin w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full mb-2"></div>
+                  <span className="text-sm text-orange-400">AI is analyzing your image...</span>
+                </div>
+              ) : preview ? (
+                <div className="bg-[#232326] rounded-lg p-4 text-center">
+                  <img src={preview} alt="Preview" className="max-h-48 rounded mx-auto mb-2" />
+                  <span className="text-xs text-green-400">✅ Image uploaded to S3</span>
+                </div>
+              ) : (
+                <div className="bg-[#232326] rounded-lg border-2 border-dashed border-gray-500 p-8 text-center text-gray-500">
+                  <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-sm">Use buttons above to add image</p>
+                  <p className="text-xs mt-1">AI will auto-generate title & description</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Desktop Drag & Drop Area */
+            <div
+              className={`bg-[#232326] rounded-lg flex flex-col items-center justify-center h-64 mb-4 border-2 border-dashed transition-colors cursor-pointer ${
+                isAnalyzing
+                  ? 'border-orange-400 bg-orange-400/10'
+                  : 'border-orange-500 hover:border-orange-400'
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDrag}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onClick={handleUploadClick}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                ref={dropRef}
+                style={{ display: "none" }}
+                onChange={handleInputChange}
+              />
+              
+              {isAnalyzing ? (
+                <div className="flex flex-col items-center text-orange-400">
+                  <div className="animate-spin w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full mb-2"></div>
+                  <span className="text-sm">AI is analyzing your image...</span>
+                </div>
+              ) : preview ? (
+                <div className="flex flex-col items-center">
+                  <img src={preview} alt="Preview" className="max-h-52 rounded mb-2" />
+                  <span className="text-xs text-green-400">✅ Image uploaded to S3</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-gray-500">
+                  <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004-4h10a4 4 0 004 4M7 10V4m0 6l4-4m-4 4l-4-4" />
+                  </svg>
+                  <span>Drag & drop or <span className="text-orange-400 underline">browse</span></span>
+                  <span className="text-xs mt-1">AI will auto-generate title, category & description</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {analysisError && (
             <div className="bg-red-900/20 border border-red-500 text-red-400 p-3 rounded mb-4">
@@ -1212,7 +1287,6 @@ export default function AddNewAuctionForm() {
         <div className="bg-[#232326] rounded-lg p-4">
           <h3 className="font-bold mb-4 text-orange-400">Auction Timing</h3>
           <div className="space-y-3">
-            {/* ✅ ENHANCED: Start Time Input with better UX */}
             <div>
               <label className="text-xs text-gray-400 block mb-1">Start Time *</label>
               <input
@@ -1227,7 +1301,6 @@ export default function AddNewAuctionForm() {
               </div>
             </div>
             
-            {/* ✅ ENHANCED: End Time Input with duration helper */}
             <div>
               <label className="text-xs text-gray-400 block mb-1">End Time *</label>
               <input

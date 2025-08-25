@@ -270,6 +270,13 @@ class AuctionAPI {
     });
   }
 
+  // Add this method to your existing auctionAPI class
+async getSeller(sellerId) {
+  return this.request(`/api/users/${sellerId}`, {
+    method: 'GET',
+  });
+}
+
   async updateAuction(id, auctionData) {
     return this.request(`/api/auctions/${id}`, {
       method: 'PUT',
