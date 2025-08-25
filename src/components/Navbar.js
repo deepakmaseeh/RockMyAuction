@@ -25,7 +25,7 @@ export default function Navbar() {
             className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition"
           >
             <img
-              src="/RMA-LOGO.png"
+              src="/RMA-Logo.png"
               alt="Rock My Auction"
               className="h-8 sm:h-10 md:h-12 w-auto" // Responsive logo sizing
             />
