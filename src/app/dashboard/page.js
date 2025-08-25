@@ -400,7 +400,6 @@
 
 
 'use client'
-
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserRole } from '@/contexts/RoleContext'
@@ -451,6 +450,20 @@ const ClockIcon = ({ className }) => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 )
+
+const adminIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z" />
+  </svg>
+)
+
+
+const WalletIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+)
+
 
 const ChartBarIcon = ({ className }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -611,14 +624,23 @@ function QuickActions({ role }) {
     { name: 'Manage Listings', shortName: 'Manage', href: '/seller/active-auctions', icon: ClipboardListIcon, color: 'bg-blue-600' },
     { name: 'View Analytics', shortName: 'Analytics', href: '/seller/analytics', icon: ChartBarIcon, color: 'bg-purple-600' },
     { name: 'Messages', shortName: 'Messages', href: '/messages', icon: ChatIcon, color: 'bg-orange-600' },
-    {name:'admin', shortName:'admin', href:'/admin',icon:EyeIcon, color:'bg-red-600'},
+    { name: 'Wallet', shortName: 'Wallet', href: '/wallet', icon: WalletIcon, color: 'bg-yellow-600' },
+    { name: 'Admin', shortName: 'Admin', href: '/admin', icon: adminIcon, color: 'bg-red-600' },
+
+
+
+
 
   ]
   const buyer = [
     { name: 'Browse Auctions', shortName: 'Browse', href: '/auctions', icon: SearchIcon, color: 'bg-blue-600' },
     { name: 'My Watchlist', shortName: 'Watchlist', href: '/watchlist', icon: HeartIcon, color: 'bg-green-600' },
     { name: 'Bid History', shortName: 'Bids', href: '/bids', icon: TagIcon, color: 'bg-purple-600' },
-    { name: 'Messages', shortName: 'Messages', href: '/messages', icon: ChatIcon, color: 'bg-orange-600' }
+    { name: 'Messages', shortName: 'Messages', href: '/messages', icon: ChatIcon, color: 'bg-orange-600' },
+    { name: 'Wallet', shortName: 'Wallet', href: '/wallet', icon: WalletIcon, color: 'bg-yellow-600' },
+    { name: 'Admin', shortName: 'Admin', href: '/admin', icon: adminIcon, color: 'bg-red-600' },
+
+
   ]
   const actions = role === 'seller' ? seller : buyer
 

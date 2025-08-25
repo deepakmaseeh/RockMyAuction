@@ -64,6 +64,7 @@ function DynamicNavigation({ onNavigate }) {
     { href: '/seller/analytics', label: 'Analytics', shortLabel: 'Stats', icon: '📈' },
     { href: '/seller/earnings', label: 'Earnings', shortLabel: 'Money', icon: '💰' },
     { href: '/messages', label: 'Messages', shortLabel: 'Chat', icon: '💬' },
+    { href: '/wallet', label: 'Wallet', shortLabel: 'Wallet', icon: '💰' },
     { href: '/settings', label: 'Settings', shortLabel: 'Config', icon: '⚙️' },
     { href: '/profile', label: 'My Profile', shortLabel: 'Profile', icon: '👤' },
   ]
@@ -75,6 +76,7 @@ function DynamicNavigation({ onNavigate }) {
     { href: '/bids', label: 'My Bids', shortLabel: 'Bids', icon: '🏷️' },
     { href: '/purchases', label: 'My Purchases', shortLabel: 'Bought', icon: '📦' },
     { href: '/messages', label: 'Messages', shortLabel: 'Chat', icon: '💬' },
+    { href: '/wallet', label: 'Wallet', shortLabel: 'Wallet', icon: '💰' },
     { href: '/settings', label: 'Settings', shortLabel: 'Config', icon: '⚙️' },
     { href: '/profile', label: 'My Profile', shortLabel: 'Profile', icon: '👤' },
   ]

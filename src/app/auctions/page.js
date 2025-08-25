@@ -83,7 +83,7 @@ function AuctionCard({ auction }) {
       {/* Status Badge */}
       <div className="relative">
         <img
-          src={auction.images?.[0] || auction.image || '/placeholder-auction.jpg'}
+          src={auction.images?.[0] || auction.image || '/placeholder-auction.svg'}
           alt={auction.title}
           className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"

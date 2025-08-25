@@ -250,6 +250,52 @@ class AuctionAPI {
     });
   }
 
+  // Add this method to your existing auctionAPI class
+async getSeller(sellerId) {
+  return this.request(`/api/users/${sellerId}`, {
+    method: 'GET',
+  });
+}
+
+  // Add these methods to your existing auctionAPI class
+
+// Wallet endpoints
+async getWallet() {
+  return this.request('/api/wallet', {
+    method: 'GET',
+  });
+}
+
+async getWalletTransactions(params = {}) {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) queryParams.set(key, value);
+  });
+  return this.request(`/api/wallet/transactions${queryParams.toString() ? `?${queryParams}` : ''}`, {
+    method: 'GET',
+  });
+}
+
+async addMoney(amount, paymentMethod) {
+  return this.request('/api/wallet/add', {
+    method: 'POST',
+    body: JSON.stringify({ amount, paymentMethod }),
+  });
+}
+
+async withdrawMoney(amount, withdrawalMethod) {
+  return this.request('/api/wallet/withdraw', {
+    method: 'POST',
+    body: JSON.stringify({ amount, withdrawalMethod }),
+  });
+}
+
+async getPaymentMethods() {
+  return this.request('/api/wallet/payment-methods', {
+    method: 'GET',
+  });
+}
+
   // Auction endpoints
   async getAuctions(params = {}) {
     const queryParams = new URLSearchParams();
@@ -270,12 +316,6 @@ class AuctionAPI {
     });
   }
 
-  // Add this method to your existing auctionAPI class
-async getSeller(sellerId) {
-  return this.request(`/api/users/${sellerId}`, {
-    method: 'GET',
-  });
-}
 
   async updateAuction(id, auctionData) {
     return this.request(`/api/auctions/${id}`, {
