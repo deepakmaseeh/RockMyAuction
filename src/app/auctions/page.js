@@ -492,9 +492,11 @@ export default function AuctionsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredAuctions.map((auction) => (
-              <AuctionCard key={auction._id || auction.id} auction={auction} />
-            ))}
+            {[...filteredAuctions]
+              .sort((a, b) => new Date(b.createdAt || b.startDate || b.updatedAt || 0) - new Date(a.createdAt || a.startDate || a.updatedAt || 0))
+              .map((auction) => (
+                <AuctionCard key={auction._id || auction.id} auction={auction} />
+              ))}
           </div>
         )}
       </section>
