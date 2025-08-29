@@ -72,7 +72,7 @@ function DynamicNavigation({ onNavigate }) {
   const buyerLinks = [
     { href: '/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: '📊' },
     { href: '/auctions', label: 'Browse Auctions', shortLabel: 'Browse', icon: '🔍', highlight: true },
-    { href: '/watchlist', label: 'My Watchlist', shortLabel: 'Watch', icon: '👁️' },
+    { href: '/watchlist', label: 'My Wishlist', shortLabel: 'Watch', icon: '👁️' },
     { href: '/bids', label: 'My Bids', shortLabel: 'Bids', icon: '🏷️' },
     { href: '/purchases', label: 'My Purchases', shortLabel: 'Bought', icon: '📦' },
     { href: '/messages', label: 'Messages', shortLabel: 'Chat', icon: '💬' },

@@ -186,7 +186,7 @@ const chartOptions = {
   <Line data={chartData} options={chartOptions} />
 </div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4">       
             {[
               { label:'Added This Month', value:1250 },
               { label:'Withdrawn This Month', value:340 },

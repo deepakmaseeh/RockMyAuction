@@ -11,7 +11,7 @@ export async function POST(req) {
       title: body.title,
       description: body.description,
       category: body.category,
-      images: [body.image],
+      images: body.images,
       currentBid: body.startingBid,
       reservePrice: body.reservePrice || null,
       quantity: body.quantity || 1,

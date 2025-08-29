@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { RoleProvider } from '../contexts/RoleContext';
 import FloatingChatbot from '@/components/FloatingChatbot';
+import { WishlistProvider } from '../contexts/WishlistContext';
+
 import "./globals.css";
 
 const geistSans = Geist({

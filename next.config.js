@@ -7,11 +7,8 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@google/generative-ai']
   },
   images: {
-    domains: [
-      // Whitelist your S3 bucket domain
-      'my-s3-bucket-auctiondata.s3.ap-south-1.amazonaws.com',
-    ],
+     domains: ['s3.amazonaws.com', 'my-s3-bucket-auctiondata.s3.ap-south-1.amazonaws.com'],
+    remotePatterns: [{ protocol:'https', hostname:'**.amazonaws.com', pathname:'/**' }]
   },
 }
-
 module.exports = nextConfig
