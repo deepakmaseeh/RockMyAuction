@@ -22,52 +22,13 @@ const featuredAuction = {
 // ✅ FIXED: Mobile-optimized AuctionCard Component with seller error fix
 function AuctionCard({ auction }) {
   const router = useRouter()
-  const [timeLeft, setTimeLeft] = useState('')
+  
+  const timeLeft = calculateTimeLeft(auction.endDate)
+  const isEnded = timeLeft === 'Ended'
+  const isUrgent = timeLeft.includes('h') && parseInt(timeLeft) < 2
 
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime()
-      const endTime = new Date(auction.endDate || auction.endTime).getTime()
-      const difference = endTime - now
-
-      if (difference > 0) {
-        const hours = Math.floor(difference / (1000 * 60 * 60))
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000)
-        
-        if (hours > 0) {
-          setTimeLeft(`${hours}h ${minutes}m`)
-        } else if (minutes > 0) {
-          setTimeLeft(`${minutes}m ${seconds}s`)
-        } else {
-          setTimeLeft(`${seconds}s`)
-        }
-      } else {
-        setTimeLeft('ENDED')
-      }
-    }
-
-    calculateTimeLeft()
-    const timer = setInterval(calculateTimeLeft, 1000)
-    return () => clearInterval(timer)
-  }, [auction.endDate, auction.endTime])
-
-  const isUrgent = timeLeft.includes('m') && !timeLeft.includes('h') && parseInt(timeLeft) < 30
-  const isEnded = timeLeft === 'ENDED'
-
-  // ✅ FIXED: Safely get seller name and first character
   const getSeller = () => {
-    const seller = auction.seller || auction.sellerId || auction.createdBy || auction.owner
-    
-    if (seller) {
-      if (typeof seller === 'object' && seller.name) {
-        return seller.name
-      }
-      if (typeof seller === 'string') {
-        return seller
-      }
-    }
-    return 'Unknown Seller'
+    return auction.seller?.name || auction.sellerName || 'Unknown Seller'
   }
 
   const getSellerInitial = () => {
@@ -80,7 +41,7 @@ function AuctionCard({ auction }) {
       {/* Status Badge */}
       <div className="relative">
         <img
-          src={auction.images?.[0] || auction.image || '/placeholder-auction.svg'}
+          src={auction.imageUrl || auction.images?.[0] || auction.image || '/placeholder-auction.svg'}
           alt={auction.title}
           className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
@@ -136,7 +97,7 @@ function AuctionCard({ auction }) {
         <div className="flex gap-2">
           <button
             onClick={() => router.push(`/auctions/${auction._id || auction.id}`)}
-            className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium text-center transition text-sm sm:text-base touch-manipulation ${
+            className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium text-center transition text-sm sm:text-base ${
               isEnded 
                 ? 'bg-gray-600 text-gray-300 cursor-not-allowed' 
                 : 'bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white'
@@ -588,4 +549,26 @@ export default function AuctionsPage() {
       <Footer />
     </div>
   )
+}
+
+function calculateTimeLeft(endDate) {
+  const now = new Date().getTime()
+  const endTime = new Date(endDate).getTime()
+  const difference = endTime - now
+
+  if (difference > 0) {
+    const hours = Math.floor(difference / (1000 * 60 * 60))
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000)
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`
+    } else {
+      return `${seconds}s`
+    }
+  } else {
+    return 'Ended'
+  }
 }

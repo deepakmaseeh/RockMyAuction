@@ -114,13 +114,13 @@ function ListingItem({ listing, onEdit, onDelete, onPromote }) {
   }
 
   return (
-    <div className="bg-[#18181B] rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all overflow-hidden">
+    <div className="bg-[#18181B] rounded-xl border border-[#232326] hover:border-orange-500/30 transition-all">
       <div className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Image */}
           <div className="w-full sm:w-24 h-48 sm:h-24 bg-[#232326] rounded-lg overflow-hidden flex-shrink-0">
             <img
-              src={listing.image || '/placeholder-auction.jpg'}
+              src={listing.imageUrl || listing.image || '/placeholder-auction.jpg'}
               alt={listing.title}
               className="w-full h-full object-cover"
             />

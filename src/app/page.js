@@ -170,7 +170,7 @@ export default function HomePage() {
               {liveAuctions.slice(0, 3).map((auction) => (
                 <AuctionCard
                   key={auction._id || auction.id}
-                  image={auction.images?.[0] || '/placeholder.png'}
+                  image={auction.imageUrl || auction.images?.[0] || '/placeholder.png'}
                   title={auction.title}
                   currentBid={auction.currentBid || auction.startingPrice}
                   users={auction.bidCount || auction.bids?.length || 0}
