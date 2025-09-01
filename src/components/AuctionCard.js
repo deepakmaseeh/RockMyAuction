@@ -30,11 +30,11 @@ export default function AuctionCard({
         {/* ✅ Pass full auction object to WishlistButton */}
         {(auction || auctionId) && (
           <div className="absolute top-2 right-2">
-            <WishlistButton 
+            {/* <WishlistButton 
               auction={auction} 
               auctionId={auctionId}
               size="sm" 
-            />
+            /> */}
           </div>
         )}
         

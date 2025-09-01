@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -126,7 +125,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ✅ Featured Live Auctions - Show Only 3 Cards */}
+      {/* ✅ FIXED: Featured Live Auctions - Pass full auction object */}
       <section className="max-w-5xl mx-auto mt-10 sm:mt-12 lg:mt-14 mb-6 px-4 sm:px-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl sm:text-2xl font-bold">Featured Live Auctions</h2>
@@ -170,12 +169,7 @@ export default function HomePage() {
               {liveAuctions.slice(0, 3).map((auction) => (
                 <AuctionCard
                   key={auction._id || auction.id}
-                  image={auction.imageUrl || auction.images?.[0] || '/placeholder.png'}
-                  title={auction.title}
-                  currentBid={auction.currentBid || auction.startingPrice}
-                  users={auction.bidCount || auction.bids?.length || 0}
-                  endDate={new Date(auction.endDate).toLocaleString()}
-                  onClick={() => router.push(`/auctions/${auction._id || auction.id}`)}
+                  auction={auction}
                 />
               ))}
             </div>
@@ -207,7 +201,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ✅ NEW: Recently Added Auctions (Newest to Oldest) */}
+      {/* ✅ FIXED: Recently Added Auctions - Pass full auction object */}
       <section className="max-w-5xl mx-auto mt-10 sm:mt-12 lg:mt-14 mb-6 px-4 sm:px-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl sm:text-2xl font-bold">Recently Added Auctions</h2>
@@ -232,12 +226,7 @@ export default function HomePage() {
               {recentlyAddedAuctions.slice(0, 3).map((auction) => (
                 <AuctionCard
                   key={`recent-${auction._id || auction.id}`}
-                  image={auction.images?.[0] || '/placeholder.png'}
-                  title={auction.title}
-                  currentBid={auction.currentBid || auction.startingPrice}
-                  users={auction.bidCount || auction.bids?.length || 0}
-                  endDate={new Date(auction.endDate).toLocaleString()}
-                  onClick={() => router.push(`/auctions/${auction._id || auction.id}`)}
+                  auction={auction}
                 />
               ))}
             </div>
@@ -259,7 +248,7 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* ✅ FIXED: Recently Ended Auctions - Now shows actual ended auctions */}
+      {/* ✅ FIXED: Recently Ended Auctions - Pass full auction object */}
       <section className="max-w-5xl mx-auto mt-10 sm:mt-12 lg:mt-14 mb-6 px-4 sm:px-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl sm:text-2xl font-bold">Recently Ended Auctions</h2>
@@ -286,23 +275,12 @@ export default function HomePage() {
               {endedAuctions
                 .sort((a, b) => new Date(b.endDate) - new Date(a.endDate)) // Sort by most recently ended
                 .slice(0, 3)
-                .map((auction) => {
-                  const daysAgo = Math.floor((Date.now() - new Date(auction.endDate)) / (1000*60*60*24))
-                  const hoursAgo = Math.floor((Date.now() - new Date(auction.endDate)) / (1000*60*60))
-                  
-                  return (
-                    <AuctionCard
-                      key={`ended-${auction._id || auction.id}`}
-                      image={auction.images?.[0] || '/placeholder.png'}
-                      title={auction.title}
-                      currentBid={auction.currentBid || auction.startingPrice}
-                      users={auction.bidCount || auction.bids?.length || 0}
-                      endDate={daysAgo > 0 ? `Ended ${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago` : `Ended ${hoursAgo} hour${hoursAgo !== 1 ? 's' : ''} ago`}
-                      type="ended"
-                      onClick={() => router.push(`/auctions/${auction._id || auction.id}`)}
-                    />
-                  )
-                })}
+                .map((auction) => (
+                  <AuctionCard
+                    key={`ended-${auction._id || auction.id}`}
+                    auction={auction}
+                  />
+                ))}
             </div>
             
             {endedAuctions.length > 3 && (
