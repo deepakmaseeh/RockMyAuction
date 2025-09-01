@@ -125,7 +125,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ✅ FIXED: Featured Live Auctions - Pass full auction object */}
+      {/* ✅ REWRITTEN: Featured Live Auctions - Complete Information Display */}
       <section className="max-w-5xl mx-auto mt-10 sm:mt-12 lg:mt-14 mb-6 px-4 sm:px-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl sm:text-2xl font-bold">Featured Live Auctions</h2>
@@ -166,12 +166,29 @@ export default function HomePage() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {liveAuctions.slice(0, 3).map((auction) => (
-                <AuctionCard
-                  key={auction._id || auction.id}
-                  auction={auction}
-                />
-              ))}
+              {liveAuctions
+                .sort((a, b) => new Date(b.createdAt || b.startDate || 0) - new Date(a.createdAt || a.startDate || 0)) // Sort by newest first
+                .slice(0, 3)
+                .map((auction) => (
+                  <AuctionCard
+                    key={auction._id || auction.id}
+                    auction={auction}
+                    title={auction.title}
+                    currentBid={auction.currentBid || auction.startingPrice}
+                    users={auction.bidCount || auction.bids?.length || 0}
+                    endTime={new Date(auction.endDate).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                    imageUrl={auction.imageUrl || auction.images?.[0]}
+                    auctionId={auction._id || auction.id}
+                    type="live"
+                    onClick={() => router.push(`/auctions/${auction._id || auction.id}`)}
+                  />
+                ))
+              }
             </div>
             
             {liveAuctions.length > 3 && (
@@ -201,7 +218,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ✅ FIXED: Recently Added Auctions - Pass full auction object */}
+      {/* ✅ REWRITTEN: Recently Added Auctions - Complete Information Display */}
       <section className="max-w-5xl mx-auto mt-10 sm:mt-12 lg:mt-14 mb-6 px-4 sm:px-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl sm:text-2xl font-bold">Recently Added Auctions</h2>
@@ -223,12 +240,28 @@ export default function HomePage() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {recentlyAddedAuctions.slice(0, 3).map((auction) => (
-                <AuctionCard
-                  key={`recent-${auction._id || auction.id}`}
-                  auction={auction}
-                />
-              ))}
+              {recentlyAddedAuctions
+                .slice(0, 3)
+                .map((auction) => (
+                  <AuctionCard
+                    key={`recent-${auction._id || auction.id}`}
+                    auction={auction}
+                    title={auction.title}
+                    currentBid={auction.currentBid || auction.startingPrice}
+                    users={auction.bidCount || auction.bids?.length || 0}
+                    endTime={new Date(auction.endDate).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                    imageUrl={auction.imageUrl || auction.images?.[0]}
+                    auctionId={auction._id || auction.id}
+                    type="live"
+                    onClick={() => router.push(`/auctions/${auction._id || auction.id}`)}
+                  />
+                ))
+              }
             </div>
             
             {recentlyAddedAuctions.length > 3 && (
@@ -248,7 +281,7 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* ✅ FIXED: Recently Ended Auctions - Pass full auction object */}
+      {/* ✅ REWRITTEN: Recently Ended Auctions - Complete Information Display */}
       <section className="max-w-5xl mx-auto mt-10 sm:mt-12 lg:mt-14 mb-6 px-4 sm:px-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl sm:text-2xl font-bold">Recently Ended Auctions</h2>
@@ -275,12 +308,29 @@ export default function HomePage() {
               {endedAuctions
                 .sort((a, b) => new Date(b.endDate) - new Date(a.endDate)) // Sort by most recently ended
                 .slice(0, 3)
-                .map((auction) => (
-                  <AuctionCard
-                    key={`ended-${auction._id || auction.id}`}
-                    auction={auction}
-                  />
-                ))}
+                .map((auction) => {
+                  const daysAgo = Math.floor((Date.now() - new Date(auction.endDate)) / (1000*60*60*24))
+                  const hoursAgo = Math.floor((Date.now() - new Date(auction.endDate)) / (1000*60*60))
+                  const endedText = daysAgo > 0 
+                    ? `Ended ${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago`
+                    : `Ended ${hoursAgo} hour${hoursAgo !== 1 ? 's' : ''} ago`
+
+                  return (
+                    <AuctionCard
+                      key={`ended-${auction._id || auction.id}`}
+                      auction={auction}
+                      title={auction.title}
+                      currentBid={auction.currentBid || auction.startingPrice}
+                      users={auction.bidCount || auction.bids?.length || 0}
+                      endTime={endedText}
+                      imageUrl={auction.imageUrl || auction.images?.[0]}
+                      auctionId={auction._id || auction.id}
+                      type="ended"
+                      onClick={() => router.push(`/auctions/${auction._id || auction.id}`)}
+                    />
+                  )
+                })
+              }
             </div>
             
             {endedAuctions.length > 3 && (
