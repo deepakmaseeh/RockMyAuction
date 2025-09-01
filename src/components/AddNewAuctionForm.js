@@ -404,7 +404,8 @@ export default function AddNewAuctionForm() {
       // Redirect to auction details or dashboard
       const auctionId = response._id || response.id
       if (auctionId) {
-        router.push(`/auctions/${auctionId}`)
+        // router.push(`/auctions/${auctionId}`)
+        router.push(`/auctions`)
       } else {
         router.push('/dashboard')
       }
