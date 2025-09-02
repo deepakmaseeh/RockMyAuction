@@ -18,12 +18,12 @@ export default function ChatWindow({ onClose }) {
   const windowRef = useRef(null);
 
   // Updated Groq API Configuration
-  const GROQ_CONFIG = {
+ const GROQ_CONFIG = {
     url: "https://api.groq.com/openai/v1/chat/completions",
     apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
     visionModel: "meta-llama/llama-4-scout-17b-16e-instruct",
     textModel: "llama-3.3-70b-versatile"
-  };
+  }; 
 
   // Initialize window position
   useEffect(() => {

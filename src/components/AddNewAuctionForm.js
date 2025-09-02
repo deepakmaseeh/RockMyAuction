@@ -406,7 +406,7 @@ export default function AddNewAuctionForm() {
       if (auctionId) {
         // router.push(`/auctions/${auctionId}`)
         router.push(`/auctions`)
-      } else {
+      } else {  
         router.push('/dashboard')
       }
 

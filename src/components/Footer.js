@@ -6,7 +6,16 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Logo & Tagline */}
         <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Rock the Auction</h2>
+           <Link
+            href="/"
+            className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition"
+          >
+            <img
+              src="/RMA-Logo.png"
+              alt="Rock My Auction"
+              className="h-8 sm:h-10 md:h-18 w-auto" // Responsive logo sizing
+            />
+          </Link>
           <p className="text-sm text-gray-400">
             Discover rare collectibles, bid with confidence, and rock every auction drop.
           </p>
@@ -60,7 +69,7 @@ export default function Footer() {
 
       {/* Bottom */}
       <div className="border-t border-gray-700 mt-10 pt-5 text-sm text-center text-gray-500">
-        <p>&copy; {new Date().getFullYear()} Rock the Auction. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Rock My Auction. All rights reserved.</p>
         <div className="mt-2 flex justify-center gap-4">
           <a href="#" className="hover:underline">Privacy Policy</a>
           <a href="#" className="hover:underline">Terms of Use</a>
