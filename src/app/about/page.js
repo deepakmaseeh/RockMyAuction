@@ -25,10 +25,10 @@ export default function AboutPage() {
   ]
 
   const team = [
-    { name:'Alicia Gomez', role:'CEO / Co-Founder', img:'/about/team-alice.jpg',  bio:'Marketplace strategist & vintage-camera addict.'},
-    { name:'Dev Patel',    role:'CTO',              img:'/about/team-dev.jpg',    bio:'Full-stack architect and auction sniper.'},
-    { name:'Marcus R.',    role:'Head of Product',  img:'/about/team-marcus.jpg', bio:'Data-driven builder with a sneaker habit.'},
-    { name:'Elena K.',     role:'Community Lead',   img:'/about/team-elena.jpg',  bio:'Turning collectors into lifelong friends.'},
+    { name:'Alicia Gomez', role:'CEO / Co-Founder', img:'/images.jpeg',  bio:'Marketplace strategist & vintage-camera addict.'},
+    { name:'Dev Patel',    role:'CTO',              img:'/images.jpeg',    bio:'Full-stack architect and auction sniper.'},
+    { name:'Marcus R.',    role:'Head of Product',  img:'/images.jpeg', bio:'Data-driven builder with a sneaker habit.'},
+    { name:'Elena K.',     role:'Community Lead',   img:'/images.jpeg',  bio:'Turning collectors into lifelong friends.'},
   ]
 
   const features = [
@@ -74,7 +74,7 @@ export default function AboutPage() {
 
             {/* Description */}
             <p className="text-base sm:text-lg md:text-xl text-gray-200 max-w-prose mx-auto">
-              Rock the Auction turns passion into opportunity. Bid on treasures,
+              Rock My Auction turns passion into opportunity. Bid on treasures,
               list your own finds, and join a community built on trust.
             </p>
 
@@ -107,7 +107,7 @@ export default function AboutPage() {
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">Our Mission</h2>
         <p className="text-base sm:text-lg text-gray-300 leading-relaxed text-center">
-          Rock the Auction empowers anyone to be both&nbsp;
+          Rock My Auction  <span className="text-orange-400 font-semibold">One Auction Platform to Combine Them All</span> empowers anyone to be both&nbsp;
           <span className="text-orange-400 font-semibold">buyer</span> and&nbsp;
           <span className="text-orange-400 font-semibold">seller</span>, unlocking hidden
           value in the world's collections while guaranteeing authenticity,

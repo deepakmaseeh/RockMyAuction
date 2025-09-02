@@ -1771,7 +1771,7 @@ function SellerInfo({ seller }) {
         </div>
       </div>
       <div className="mt-4 pt-4 border-t border-[#232326]">
-        <Link href={`/sellers/99`} className="text-orange-400 hover:text-orange-300 text-sm font-medium">
+        <Link href={`/profile`} className="text-orange-400 hover:text-orange-300 text-sm font-medium">
           View Seller Profile →
         </Link>
       </div>

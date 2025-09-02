@@ -16,9 +16,10 @@ export default function Footer() {
               className="h-8 sm:h-10 md:h-18 w-auto" // Responsive logo sizing
             />
           </Link>
+          <h2 className="text-1xl font-bold text-white mb-2">One Auction Platform <br/> to Combine Them All</h2>
           <p className="text-sm text-gray-400">
             Discover rare collectibles, bid with confidence, and rock every auction drop.
-          </p>
+          </p> 
         </div>
 
         {/* Quick Links */}
