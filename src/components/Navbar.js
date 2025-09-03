@@ -14,7 +14,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-[#18181B] border-b border-[#232326]">
+    <nav className="bg-[#18181B] border-b border-[#232326] font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo Section - Responsive sizing */}
