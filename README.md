@@ -117,3 +117,14 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Adding Application Images 
+<img width="1920" height="4035" alt="screencapture-rock-my-auction-vercel-app-2025-09-09-16_03_00" src="https://github.com/user-attachments/assets/d693a46d-a32b-4a80-973b-2b29dc2373f5" />
+<img width="1920" height="3556" alt="screencapture-rock-my-auction-vercel-app-auctions-2025-09-09-16_03_25" src="https://github.com/user-attachments/assets/f9b0d13e-eec2-4429-a903-24e31ce7479c" />
+<img width="1920" height="2447" alt="screencapture-rock-my-auction-vercel-app-auctions-68b7cb759ff4ec8e5849b04d-2025-09-09-16_09_49" src="https://github.com/user-attachments/assets/36ffe56f-0af3-4973-8ec3-dceeaa2ed787" />
+<img width="1920" height="1580" alt="screencapture-rock-my-auction-vercel-app-dashboard-2025-09-09-16_06_16" src="https://github.com/user-attachments/assets/e292f74e-14c0-4f54-8870-940e53d3077f" />
+<img width="1920" height="1127" alt="screencapture-rock-my-auction-vercel-app-admin-2025-09-09-16_06_32" src="https://github.com/user-attachments/assets/cddb7853-78d6-4dbd-b547-7c43be05b30f" />
+<img width="1920" height="1580" alt="screencapture-rock-my-auction-vercel-app-dashboard-2025-09-09-16_03_47" src="https://github.com/user-attachments/assets/50dfa807-ac4a-4ab4-967b-8653034f6814" />
+<img width="1920" height="5087" alt="screencapture-rock-my-auction-vercel-app-about-2025-09-09-16_04_04" src="https://github.com/user-attachments/assets/51e51e8a-70d3-459f-a580-c7985cf7a639" />
+<img width="1920" height="3730" alt="screencapture-rock-my-auction-vercel-app-help-center-2025-09-09-16_04_34" src="https://github.com/user-attachments/assets/cacf57f7-41d3-4fd7-81f5-a512a30bb2a1" />
+<img width="1920" height="2202" alt="screencapture-rock-my-auction-vercel-app-seller-new-auction-2025-09-09-16_05_46" src="https://github.com/user-attachments/assets/e398b226-67a5-4213-96ae-2574a0f03d05" />
