@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test n8n Search Agent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #ff6600;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #ff8833;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .loading {
+            color: #ff6600;
+            font-style: italic;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test n8n Search Agent</h1>
+        
+        <label for="webhookUrl">n8n Webhook URL:</label>
+        <input 
+            type="text" 
+            id="webhookUrl" 
+            value="http://localhost:5678/webhook/search"
+            placeholder="Enter your n8n webhook URL"
+        />
+        
+        <label for="searchQuery">Search Query:</label>
+        <input 
+            type="text" 
+            id="searchQuery" 
+            placeholder="Enter your search query..."
+            value="luxury watches auction"
+        />
+        
+        <label for="searchType">Search Type:</label>
+        <select id="searchType">
+            <option value="normal">Normal Search (Faster)</option>
+            <option value="deep">Deep Search (More Results)</option>
+        </select>
+        
+        <button onclick="testSearch()" id="testBtn">
+            🚀 Test Search
+        </button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function testSearch() {
+            const webhookUrl = document.getElementById('webhookUrl').value;
+            const searchQuery = document.getElementById('searchQuery').value;
+            const searchType = document.getElementById('searchType').value;
+            const resultDiv = document.getElementById('result');
+            const testBtn = document.getElementById('testBtn');
+            
+            if (!searchQuery) {
+                alert('Please enter a search query!');
+                return;
+            }
+            
+            // Show loading
+            resultDiv.innerHTML = '<p class="loading">⏳ Searching... This may take 5-15 seconds...</p>';
+            testBtn.disabled = true;
+            testBtn.textContent = '⏳ Searching...';
+            
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: searchQuery,
+                        searchType: searchType
+                    })
+                });
+                
+                const endTime = Date.now();
+                const responseTime = ((endTime - startTime) / 1000).toFixed(2);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Display results
+                let output = `<p class="success">✅ Success! Response Time: ${responseTime}s</p>\n\n`;
+                output += `<strong>Query:</strong> ${data.query}\n`;
+                output += `<strong>Search Type:</strong> ${data.searchType}\n`;
+                output += `<strong>Total Results:</strong> ${data.totalResults}\n\n`;
+                output += `<strong>AI Response:</strong>\n${data.response}\n\n`;
+                output += `<strong>Source:</strong> ${data.sourceAttribution}\n\n`;
+                
+                if (data.searchResults && data.searchResults.length > 0) {
+                    output += `<strong>Top Search Results:</strong>\n`;
+                    data.searchResults.slice(0, 3).forEach((result, idx) => {
+                        output += `\n[${idx + 1}] ${result.title}\n`;
+                        output += `    URL: ${result.url}\n`;
+                    });
+                }
+                
+                output += `\n\n<strong>Full JSON Response:</strong>\n`;
+                output += JSON.stringify(data, null, 2);
+                
+                resultDiv.innerHTML = `<pre>${output}</pre>`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>
+                <p>Possible issues:</p>
+                <ul>
+                    <li>n8n workflow is not activated</li>
+                    <li>Webhook URL is incorrect</li>
+                    <li>SearXNG is not running</li>
+                    <li>Groq API credentials not configured</li>
+                    <li>Network/firewall blocking the request</li>
+                </ul>
+                <p>Check n8n execution logs for details.</p>`;
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = '🚀 Test Search';
+            }
+        }
+        
+        // Allow Enter key to submit
+        document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                testSearch();
+            }
+        });
+    </script>
+</body>
+</html>
