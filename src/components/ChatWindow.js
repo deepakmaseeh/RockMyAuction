@@ -1005,6 +1005,19 @@ export default function ChatWindow({ onClose }) {
     const file = event.target.files[0];
     if (file) await handleImageFile(file);
   };
+  
+  // Handle paste events for clipboard images
+  const handlePaste = async (event) => {
+    const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+    for (const item of items) {
+      if (item.type.indexOf('image') === 0) {
+        const blob = item.getAsFile();
+        await handleImageFile(blob);
+        event.preventDefault();
+        return;
+      }
+    }
+  };
 
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -1418,7 +1431,7 @@ export default function ChatWindow({ onClose }) {
               </div>
             )}
           </div>
-          <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyPress} placeholder={imagePreview ? "Describe or ask..." : selectedMode === 'search' ? "Search auctions..." : "Ask me anything..."} rows={1} className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition" disabled={isTyping} />
+          <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyPress} onPaste={handlePaste} placeholder={imagePreview ? "Describe or ask..." : selectedMode === 'search' ? "Search auctions..." : "Ask me anything..."} rows={1} className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition" disabled={isTyping} />
           <button onClick={sendMessage} disabled={(!input.trim() && !selectedImage) || isTyping} className="p-2 sm:p-2.5 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-lg text-white transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
             <svg className="w-4 h-4 sm:w-5 sm:h-5 transform rotate-45" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
