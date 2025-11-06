@@ -11,6 +11,7 @@ export function RoleProvider({ children }) {
   const [loading, setLoading] = useState(true) // ✅ ADDED: Loading state
 
   // ✅ FIXED: Check for stored auth data on mount and keep user logged in
+  // ✅ MODIFIED: Auto-create demo user if none exists (for testing without login)
   useEffect(() => {
     const checkAuthState = () => {
       try {
@@ -30,9 +31,19 @@ export function RoleProvider({ children }) {
           setIsAuthenticated(true)
           console.log('🔄 User restored from localStorage:', userData)
         } else {
-          setUser(null)
-          setIsAuthenticated(false)
-          console.log('❌ No valid auth data found')
+          // ✅ AUTO-CREATE DEMO USER FOR TESTING (no login required)
+          const defaultUserId = 'demo-user-' + Date.now()
+          const demoUser = {
+            id: defaultUserId,
+            name: 'Demo User',
+            email: 'demo@example.com'
+          }
+          localStorage.setItem('default-user-id', defaultUserId)
+          localStorage.setItem('user-data', JSON.stringify(demoUser))
+          localStorage.setItem('auth-token', 'demo-token')
+          setUser(demoUser)
+          setIsAuthenticated(true)
+          console.log('✅ Demo user auto-created for testing:', demoUser)
         }
 
         if (savedRole && (savedRole === 'buyer' || savedRole === 'seller')) {
@@ -40,12 +51,18 @@ export function RoleProvider({ children }) {
         }
       } catch (error) {
         console.error('Error checking auth state:', error)
-        // Clear corrupted data
-        localStorage.removeItem('auth-token')
-        localStorage.removeItem('user-data')
-        localStorage.removeItem('preferredRole')
-        setUser(null)
-        setIsAuthenticated(false)
+        // Create demo user even on error
+        const defaultUserId = 'demo-user-' + Date.now()
+        const demoUser = {
+          id: defaultUserId,
+          name: 'Demo User',
+          email: 'demo@example.com'
+        }
+        localStorage.setItem('default-user-id', defaultUserId)
+        localStorage.setItem('user-data', JSON.stringify(demoUser))
+        localStorage.setItem('auth-token', 'demo-token')
+        setUser(demoUser)
+        setIsAuthenticated(true)
       } finally {
         setLoading(false) // ✅ FIXED: Set loading to false after check
       }

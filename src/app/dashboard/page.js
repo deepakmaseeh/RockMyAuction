@@ -843,52 +843,38 @@ function DashboardContent() {
 }
 
 // ─────────────────────────────────────────
-// 7. PAGE COMPONENT WITH AUTHENTICATION
+// 7. PAGE COMPONENT - AUTHENTICATION DISABLED FOR TESTING
 export default function DashboardPage() {
-  const router = useRouter()
-  const { user, isAuthenticated, loading } = useUserRole()
+  // ✅ AUTHENTICATION DISABLED - Allow access without login
+  // const router = useRouter()
+  // const { user, isAuthenticated, loading } = useUserRole()
 
-  // ✅ FIXED: Added authentication check
-  useEffect(() => {
-    const checkAuth = () => {
-      console.log('🔍 Dashboard auth check:', {
-        loading,
-        isAuthenticated,
-        hasUser: !!user,
-        hasToken: !!localStorage.getItem('auth-token'),
-        hasUserData: !!localStorage.getItem('user-data')
-      })
+  // ✅ REMOVED: Authentication check - page is now accessible without login
+  // useEffect(() => {
+  //   const checkAuth = () => {
+  //     if (!loading) {
+  //       const token = localStorage.getItem('auth-token')
+  //       const userData = localStorage.getItem('user-data')
+  //       
+  //       if (!token || !userData || !isAuthenticated) {
+  //         router.push('/login')
+  //         return
+  //       }
+  //     }
+  //   }
+  //   checkAuth()
+  // }, [loading, isAuthenticated, user, router])
 
-      // Wait for loading to complete
-      if (!loading) {
-        const token = localStorage.getItem('auth-token')
-        const userData = localStorage.getItem('user-data')
-        
-        if (!token || !userData || !isAuthenticated) {
-          console.log('❌ Authentication failed, redirecting to login...')
-          router.push('/login')
-          return
-        }
-        
-        console.log('✅ User authenticated, showing dashboard')
-      }
-    }
-
-    checkAuth()
-  }, [loading, isAuthenticated, user, router])
-
-  // ✅ FIXED: Show loading while checking auth
-  if (loading) {
-    return <LoadingDashboard />
-  }
-
-  // ✅ FIXED: Don't render dashboard if not authenticated
-  if (!isAuthenticated || !user) {
-    return <LoadingDashboard />
-  }
+  // ✅ REMOVED: Authentication check - always show dashboard
+  // if (loading) {
+  //   return <LoadingDashboard />
+  // }
+  // if (!isAuthenticated || !user) {
+  //   return <LoadingDashboard />
+  // }
 
   return (
-    <div className="flex min-h-screen bg-[#09090B] mt-15">
+    <div className="flex min-h-screen bg-[#09090B]">
       <Sidebar />         
       <DashboardContent />
     </div>

@@ -60,6 +60,7 @@ function DynamicNavigation({ onNavigate }) {
   const sellerLinks = [
     { href: '/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: '📊' },
     { href: '/seller/new-auction', label: 'List New Item', shortLabel: 'Add', icon: '➕', highlight: true },
+    { href: '/catalogues', label: 'Catalogue', shortLabel: 'Catalog', icon: '📚' },
     { href: '/seller/active-auctions', label: 'Active Listings', shortLabel: 'Active', icon: '🔥' },
     { href: '/seller/analytics', label: 'Analytics', shortLabel: 'Stats', icon: '📈' },
     { href: '/seller/earnings', label: 'Earnings', shortLabel: 'Money', icon: '💰' },

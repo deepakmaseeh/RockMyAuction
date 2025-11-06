@@ -87,6 +87,52 @@ export default function AddNewAuctionForm() {
     }
   }, [])
 
+  // ✅ Listen for chatbot form fill events
+  useEffect(() => {
+    const handleFillForm = (event) => {
+      const data = event.detail
+      if (data.title) setTitle(data.title)
+      if (data.description) setDescription(data.description)
+      if (data.category) setCategory(data.category)
+      if (data.startingBid) setStartingBid(data.startingBid.toString())
+      if (data.reservePrice) setReservePrice(data.reservePrice.toString())
+      if (data.image || data.imageUrl || data.preview) {
+        const imageUrl = data.image || data.imageUrl || data.preview
+        setPreview(imageUrl)
+        setImageUrl(imageUrl)
+        // Try to convert data URL to File if needed
+        if (imageUrl.startsWith('data:image')) {
+          fetch(imageUrl)
+            .then(res => res.blob())
+            .then(blob => {
+              const file = new File([blob], 'ai-generated.jpg', { type: blob.type })
+              setImage(file)
+            })
+            .catch(console.error)
+        }
+      }
+    }
+
+    const handleClearForm = () => {
+      setTitle('')
+      setDescription('')
+      setCategory(categories[0])
+      setStartingBid('')
+      setReservePrice('')
+      setImage(null)
+      setImageUrl('')
+      setPreview(null)
+    }
+
+    window.addEventListener('fill-auction-form', handleFillForm)
+    window.addEventListener('clear-form', handleClearForm)
+
+    return () => {
+      window.removeEventListener('fill-auction-form', handleFillForm)
+      window.removeEventListener('clear-form', handleClearForm)
+    }
+  }, [])
+
   // ENHANCED IMAGE UPLOAD WITH BETTER ERROR HANDLING
   const handleImageUpload = async (file) => {
     if (!file) return
@@ -430,6 +476,19 @@ export default function AddNewAuctionForm() {
       onSubmit={handleSubmit}
       className="max-w-6xl mx-auto mt-10 bg-[#18181B] text-white rounded-2xl p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 shadow"
     >
+      {/* Info Banner about Chatbot */}
+      <div className="lg:col-span-3 mb-4 bg-blue-600/20 border border-blue-500/30 rounded-lg p-4 text-sm">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">🤖</span>
+          <div className="flex-1">
+            <p className="font-semibold text-blue-300 mb-1">AI-Powered Form Filling</p>
+            <p className="text-gray-300 text-xs">
+              Upload an image via the chatbot (bottom right) and say <strong>"fill the form"</strong> to automatically fill this form with AI-extracted details from your image!
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* LEFT: Image upload and AI analysis */}
       <div className="lg:col-span-2">
         {/* Error message for image upload */}

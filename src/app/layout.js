@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { RoleProvider } from '../contexts/RoleContext';
 import FloatingChatbot from '@/components/FloatingChatbot';
 import { WishlistProvider } from '../contexts/WishlistContext';
+import FormIntegrationSetup from '@/components/FormIntegrationSetup';
 
 import "./globals.css";
 
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#09090B] text-white`}>
         <RoleProvider>
+          <FormIntegrationSetup />
           {children}
          <FloatingChatbot /> {/* ✅ Appears on all pages */}
         </RoleProvider>

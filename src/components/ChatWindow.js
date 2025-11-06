@@ -1103,6 +1103,167 @@ export default function ChatWindow({ onClose }) {
     const currentMode = selectedMode;
     const useDeep = deepSearch;
     
+    // ✅ ENHANCED: Check for form-filling commands before sending to API
+    // ✅ If user sends image AND says "fill the form", analyze image and fill current page form
+    if (typeof window !== 'undefined') {
+      const { parseChatbotCommand, executeChatbotCommand, setupChatbotFormIntegration, analyzeImageAndFillForm } = await import('@/lib/chatbotFormIntegration')
+      
+      // Setup form integration if not already done
+      if (!window.fillCatalogueForm) {
+        setupChatbotFormIntegration()
+      }
+
+      // Check if user explicitly said "fill the form" (or similar commands)
+      const fillFormCommand = currentInput && (
+        currentInput.toLowerCase().includes('fill the form') ||
+        currentInput.toLowerCase().includes('fill form') ||
+        currentInput.toLowerCase().includes('autofill') ||
+        currentInput.toLowerCase().includes('auto-fill') ||
+        currentInput.toLowerCase().includes('fill this form') ||
+        currentInput.toLowerCase().includes('fill form with image')
+      )
+
+      // Check if we're on a form page or any page with forms
+      const path = window.location.pathname
+      const isCatalogueForm = path.includes('/catalogues/new') || 
+                              (path.includes('/catalogues/') && path.includes('/edit'))
+      const isLotForm = path.includes('/lots/new') || 
+                       (path.includes('/lots/') && path.includes('/edit'))
+      const isAuctionForm = path.includes('/seller/new-auction') || path.includes('new-auction')
+      const isSupportForm = path.includes('/help-center') || path.includes('/support')
+      const isFormPage = isCatalogueForm || isLotForm || isAuctionForm || isSupportForm
+
+      // ✅ PRIORITY: If user sends image AND says "fill the form", analyze and fill form
+      if (currentImage && fillFormCommand) {
+        setIsTyping(true)
+        
+        // Show analyzing message
+        const analyzingMsg = {
+          role: "bot",
+          text: "🔍 Analyzing image with AI and filling form... This may take a few seconds."
+        }
+        setMessages(prev => [...prev, analyzingMsg])
+        
+        try {
+          // Determine form type from current page
+          let formType = 'auto'
+          if (isCatalogueForm) formType = 'catalogue'
+          else if (isLotForm) formType = 'lot'
+          else if (isAuctionForm) formType = 'auction'
+          else if (isSupportForm) formType = 'support'
+          
+          const result = await analyzeImageAndFillForm(currentImage, formType)
+          
+          const botMsg = {
+            role: "bot",
+            text: result.message || (result.success ? '✅ Form filled successfully with AI-extracted data!' : '❌ Failed to analyze image and fill form')
+          }
+          
+          setTimeout(() => {
+            setMessages(prev => {
+              // Remove analyzing message and add result
+              const filtered = prev.filter(msg => msg.text !== analyzingMsg.text)
+              return [...filtered, botMsg]
+            })
+            setIsTyping(false)
+          }, 500)
+        } catch (error) {
+          const errorMsg = {
+            role: "bot",
+            text: `❌ Error: ${error.message}`
+          }
+          setTimeout(() => {
+            setMessages(prev => {
+              const filtered = prev.filter(msg => msg.text !== analyzingMsg.text)
+              return [...filtered, errorMsg]
+            })
+            setIsTyping(false)
+          }, 500)
+        }
+        
+        setInput("");
+        setSelectedImage(null);
+        setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return
+      }
+
+      // If image is sent on a form page (without explicit command), still analyze and fill
+      if (currentImage && isFormPage && !fillFormCommand) {
+        setIsTyping(true)
+        
+        // Show analyzing message
+        const analyzingMsg = {
+          role: "bot",
+          text: "🔍 Analyzing image with AI... This may take a few seconds."
+        }
+        setMessages(prev => [...prev, analyzingMsg])
+        
+        try {
+          const formType = isCatalogueForm ? 'catalogue' : isLotForm ? 'lot' : isAuctionForm ? 'auction' : isSupportForm ? 'support' : 'auto'
+          const result = await analyzeImageAndFillForm(currentImage, formType)
+          
+          const botMsg = {
+            role: "bot",
+            text: result.message || (result.success ? '✅ Form filled successfully!' : '❌ Failed to analyze image')
+          }
+          
+          setTimeout(() => {
+            setMessages(prev => {
+              // Remove analyzing message and add result
+              const filtered = prev.filter(msg => msg.text !== analyzingMsg.text)
+              return [...filtered, botMsg]
+            })
+            setIsTyping(false)
+          }, 500)
+        } catch (error) {
+          const errorMsg = {
+            role: "bot",
+            text: `❌ Error: ${error.message}`
+          }
+          setTimeout(() => {
+            setMessages(prev => {
+              const filtered = prev.filter(msg => msg.text !== analyzingMsg.text)
+              return [...filtered, errorMsg]
+            })
+            setIsTyping(false)
+          }, 500)
+        }
+        
+        setInput("");
+        setSelectedImage(null);
+        setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return
+      }
+
+      // Check for text-based form commands (without image)
+      if (currentInput && !currentImage) {
+        // Parse command
+        const command = parseChatbotCommand(currentInput)
+        if (command) {
+          // Execute command (async)
+          const result = await executeChatbotCommand(command)
+          
+          // Add bot response
+          const botMsg = {
+            role: "bot",
+            text: result.message || (result.success ? '✅ Form action completed!' : '❌ Failed to execute command')
+          }
+          
+          setTimeout(() => {
+            setMessages(prev => [...prev, botMsg])
+          }, 300)
+          
+          setInput("");
+          setSelectedImage(null);
+          setImagePreview(null);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          return
+        }
+      }
+    }
+    
     setInput("");
     setSelectedImage(null);
     setImagePreview(null);

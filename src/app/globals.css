@@ -36,3 +36,27 @@ body {
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Hide scrollbar for mobile/iOS */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* iOS smooth scrolling */
+@supports (-webkit-overflow-scrolling: touch) {
+  .scrollbar-hide {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Touch-friendly spacing for iOS */
+@supports (-webkit-touch-callout: none) {
+  button, a {
+    -webkit-tap-highlight-color: rgba(251, 146, 60, 0.3);
+  }
+}

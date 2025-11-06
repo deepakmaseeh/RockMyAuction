@@ -64,12 +64,12 @@ import { NextResponse } from 'next/server'
 export function middleware(request) {
   const { pathname } = request.nextUrl
   
-  // ✅ FIXED: Skip middleware entirely for API routes to prevent CORS issues
+  // ✅ Skip middleware entirely for API routes to prevent CORS issues
   if (pathname.startsWith('/api/')) {
     return NextResponse.next()
   }
   
-  // ✅ FIXED: Skip middleware for static assets
+  // ✅ Skip middleware for static assets
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/static/') ||
@@ -78,62 +78,9 @@ export function middleware(request) {
     return NextResponse.next()
   }
   
-  // Get auth token from cookies (we'll set this from frontend)
-  const authToken = request.cookies.get('auth-token')?.value
-  const isLoggedIn = !!authToken
+  // ✅ AUTHENTICATION DISABLED FOR TESTING - Allow all routes
+  // All pages are now accessible without login
   
-  console.log('🔍 Middleware:', {
-    pathname,
-    isLoggedIn: isLoggedIn,
-    hasToken: !!authToken
-  })
-  
-  // ✅ FIXED: Properly defined public paths (pages that don't need auth)
-  const publicPaths = [
-    '/',
-    '/login', 
-    '/signup',
-    '/auctions',
-    '/about',
-    '/terms',
-    '/privacy'
-  ]
-  
-  // ✅ FIXED: Protected paths (pages that need auth)
-  const protectedPaths = [
-    '/dashboard',
-    '/seller',
-    '/buyer', 
-    '/profile', 
-    '/settings',
-    '/messages',
-    '/watchlist',
-    '/bids',
-    '/admin'
-  ]
-  
-  const isPublicPath = publicPaths.some(path => 
-    pathname === path || pathname.startsWith(`${path}/`)
-  )
-  
-  const isProtectedPath = protectedPaths.some(path => 
-    pathname.startsWith(path)
-  )
-  
-  // If user is logged in and tries to access login/signup, redirect to dashboard
-  if ((pathname === '/login' || pathname === '/signup') && isLoggedIn) {
-    console.log('🔄 Redirecting logged-in user from auth page to dashboard')
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-  
-  // If user tries to access protected page without auth, redirect to login
-  // if (isProtectedPath && !isLoggedIn) {
-  //   console.log('🔒 Redirecting unauthenticated user to login')
-  //   const callbackUrl = encodeURIComponent(pathname)
-  //   return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, request.url))
-  // }
-  
-  // Allow all other requests
   return NextResponse.next()
 }
 

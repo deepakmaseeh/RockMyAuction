@@ -30,6 +30,34 @@ export default function SupportForm() {
     }
   }, [formData.message])
 
+  // ✅ Listen for chatbot form fill events
+  useEffect(() => {
+    const handleFillForm = (event) => {
+      const data = event.detail
+      if (data.category) setFormData(prev => ({ ...prev, category: data.category }))
+      if (data.email) setFormData(prev => ({ ...prev, email: data.email }))
+      if (data.subject) setFormData(prev => ({ ...prev, subject: data.subject }))
+      if (data.message) setFormData(prev => ({ ...prev, message: data.message }))
+    }
+
+    const handleClearForm = () => {
+      setFormData({
+        category: '',
+        email: '',
+        subject: '',
+        message: ''
+      })
+    }
+
+    window.addEventListener('fill-support-form', handleFillForm)
+    window.addEventListener('clear-form', handleClearForm)
+
+    return () => {
+      window.removeEventListener('fill-support-form', handleFillForm)
+      window.removeEventListener('clear-form', handleClearForm)
+    }
+  }, [])
+
   const categories = [
     { value: 'billing', label: 'Billing & Payments', icon: '💳', color: 'from-green-500 to-emerald-500' },
     { value: 'technical', label: 'Technical Support', icon: '🔧', color: 'from-blue-500 to-cyan-500' },
@@ -151,6 +179,19 @@ export default function SupportForm() {
 
   return (
     <div className="bg-gradient-to-br from-[#18181B] to-[#232326] rounded-2xl p-4 sm:p-6 lg:p-8 border border-[#333] shadow-xl">
+      {/* Info Banner about Chatbot */}
+      <div className="mb-4 bg-blue-600/20 border border-blue-500/30 rounded-lg p-3 text-sm">
+        <div className="flex items-start gap-2">
+          <span className="text-xl">🤖</span>
+          <div className="flex-1">
+            <p className="font-semibold text-blue-300 mb-1 text-xs">AI-Powered Form Filling</p>
+            <p className="text-gray-300 text-xs">
+              Upload an image via the chatbot (bottom right) and say <strong>"fill the form"</strong> to automatically fill this form with AI-extracted details!
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-3 mb-4">

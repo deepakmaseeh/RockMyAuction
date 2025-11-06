@@ -43,6 +43,12 @@ export default function Navbar() {
             >
               Auctions
             </Link>
+            <Link
+              href="/catalogues"
+              className="text-gray-300 hover:text-orange-400 transition text-sm lg:text-base"
+            >
+              Catalogs
+            </Link>
             {/* <Link
               href="/categories"
               className="text-gray-300 hover:text-orange-400 transition text-sm lg:text-base"
@@ -161,6 +167,13 @@ export default function Navbar() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Auctions
+              </Link>
+              <Link
+                href="/catalogues"
+                className="text-gray-300 hover:text-orange-400 transition py-2 text-base"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Catalogs
               </Link>
 
               {isAuthenticated && (

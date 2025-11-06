@@ -19,6 +19,7 @@ export default function ProfilePage() {
     location: 'New York, NY',
     bio: 'Passionate collector of vintage watches and rare books. Been trading on Rock the Auction for 2 years.',
     website: 'https://alexcollects.com',
+    profilePicture: user?.profilePicture || null,
     notifications: {
       email: true,
       sms: false,
@@ -35,6 +36,14 @@ export default function ProfilePage() {
       showActivity: true
     }
   })
+
+  // Load profile picture from localStorage on mount
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('user-data') || '{}')
+    if (userData.profilePicture) {
+      setFormData(prev => ({ ...prev, profilePicture: userData.profilePicture }))
+    }
+  }, [])
 
   const [stats] = useState({
     totalSales: 145,
@@ -53,6 +62,42 @@ export default function ProfilePage() {
     { type: 'bid', item: 'Abstract Art Sculpture', amount: 2800, date: '3 days ago' },
     { type: 'listed', item: 'Baseball Card Collection', amount: 1500, date: '5 days ago' }
   ])
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB')
+      return
+    }
+
+    try {
+      // Read file as data URL for preview
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const imageUrl = event.target.result
+        setFormData(prev => ({ ...prev, profilePicture: imageUrl }))
+        
+        // Update user context
+        setUser(prev => ({ ...prev, profilePicture: imageUrl }))
+        
+        // Save to localStorage
+        const userData = JSON.parse(localStorage.getItem('user-data') || '{}')
+        userData.profilePicture = imageUrl
+        localStorage.setItem('user-data', JSON.stringify(userData))
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+      alert('Failed to upload image')
+    }
+  }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -141,9 +186,36 @@ export default function ProfilePage() {
           <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
             {/* Avatar */}
             <div className="relative self-center sm:self-start">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-orange-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
-                {formData.name.split(' ').map(n => n.charAt(0)).join('')}
+              <div className="relative">
+                {formData.profilePicture ? (
+                  <img
+                    src={formData.profilePicture}
+                    alt={formData.name}
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-orange-500"
+                  />
+                ) : (
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-orange-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
+                    {formData.name.split(' ').map(n => n.charAt(0)).join('')}
+                  </div>
+                )}
+                
+                {/* Upload Button */}
+                {isEditing && (
+                  <label className="absolute -bottom-1 -right-1 w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-600 transition border-4 border-[#18181B]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </label>
+                )}
               </div>
+              
               <div className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full border-4 border-[#18181B] flex items-center justify-center">
                 <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
