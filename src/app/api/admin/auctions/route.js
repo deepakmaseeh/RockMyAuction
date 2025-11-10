@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Auction from '@/lib/models/Auction';
-import Lot from '@/lib/models/Lot';
 import EventLog from '@/lib/models/EventLog';
 
 // GET /api/admin/auctions - List all auctions
@@ -98,6 +97,7 @@ export async function POST(request) {
     );
   }
 }
+
 
 
 

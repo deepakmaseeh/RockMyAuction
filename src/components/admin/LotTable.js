@@ -154,3 +154,4 @@ export default function LotTable({ lots, auctionId, onRefresh }) {
 
 
 
+

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Auction from '@/lib/models/Auction';
-import Lot from '@/lib/models/Lot';
 import EventLog from '@/lib/models/EventLog';
 
 // GET /api/admin/auctions/[id] - Get single auction
@@ -20,8 +19,7 @@ export async function GET(request, { params }) {
       );
     }
     
-    // Get lots count
-    const lotsCount = await Lot.countDocuments({ auctionId: auction._id });
+    const lotsCount = 0;
     
     return NextResponse.json({
       success: true,
@@ -90,15 +88,6 @@ export async function DELETE(request, { params }) {
   try {
     await connectDB();
     
-    // Check if auction has lots
-    const lotsCount = await Lot.countDocuments({ auctionId: params.id });
-    if (lotsCount > 0) {
-      return NextResponse.json(
-        { success: false, error: 'Cannot delete auction with lots. Please remove lots first.' },
-        { status: 400 }
-      );
-    }
-    
     const auction = await Auction.findByIdAndDelete(params.id);
     
     if (!auction) {
@@ -128,6 +117,7 @@ export async function DELETE(request, { params }) {
     );
   }
 }
+
 
 
 

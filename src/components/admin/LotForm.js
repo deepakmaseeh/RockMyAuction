@@ -321,3 +321,4 @@ export default function LotForm({ auctionId, lot = null, onSave, onCancel }) {
 
 
 
+
