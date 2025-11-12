@@ -1,0 +1,30 @@
+{
+  "name": "@rockmyauction/catalog-backend",
+  "version": "0.1.0",
+  "description": "Isolated catalog and lot management service for RockMyAuction.",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run lint && NODE_ENV=development nodemon src/server.js",
+    "start": "NODE_ENV=production node src/server.js",
+    "lint": "eslint \"src/**/*.{js,jsx}\" --max-warnings=0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-async-handler": "^1.2.0",
+    "fast-csv": "^5.0.1",
+    "mongoose": "^8.16.4",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.1.1",
+    "nodemon": "^3.1.7"
+  }
+}
+

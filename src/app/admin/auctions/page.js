@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export default function AdminAuctionsPage() {
   const router = useRouter();
@@ -28,57 +30,81 @@ export default function AdminAuctionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Auction Management</h1>
-          <Link
-            href="/admin/auctions/new"
-            className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg font-medium"
-          >
-            + New Auction
-          </Link>
-        </div>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-900 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold sm:text-3xl">Auction Management</h1>
+              <p className="text-sm text-gray-400">
+                Manage catalog drafts, scheduled drops, and live auctions from one place.
+              </p>
+            </div>
+            <Link
+              href="/admin/auctions/new"
+              className="inline-flex items-center justify-center rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
+            >
+              + New Auction
+            </Link>
+          </div>
 
-        {loading ? (
-          <div className="text-center py-12">Loading...</div>
-        ) : auctions.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            No auctions found. Create your first auction to get started.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {auctions.map((auction) => (
-              <Link
-                key={auction._id}
-                href={`/admin/auctions/${auction._id}`}
-                className="bg-gray-800 p-6 rounded-lg hover:bg-gray-700 transition"
-              >
-                <h2 className="text-xl font-semibold mb-2">{auction.title}</h2>
-                <p className="text-gray-400 text-sm mb-4">
-                  {auction.description?.substring(0, 100)}...
-                </p>
-                <div className="flex justify-between text-sm">
-                  <span className={`px-2 py-1 rounded ${
-                    auction.status === 'live' ? 'bg-green-600' :
-                    auction.status === 'scheduled' ? 'bg-blue-600' :
-                    auction.status === 'closed' ? 'bg-gray-600' :
-                    'bg-gray-700'
-                  }`}>
-                    {auction.status}
-                  </span>
-                  <span className="text-gray-400">
-                    {new Date(auction.startAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+          {loading ? (
+            <div className="rounded-2xl border border-white/5 bg-black/20 py-12 text-center text-sm text-gray-400">
+              Loading auctions…
+            </div>
+          ) : auctions.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 py-12 text-center text-sm text-gray-400">
+              No auctions found. Create your first auction to get started.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {auctions.map((auction) => (
+                <Link
+                  key={auction._id}
+                  href={`/admin/auctions/${auction._id}`}
+                  className="group rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:border-orange-400/60 hover:bg-white/10"
+                >
+                  <div className="mb-3 flex items-center justify-between text-xs text-gray-400">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                        auction.status === 'live'
+                          ? 'bg-green-600/20 text-green-300'
+                          : auction.status === 'scheduled'
+                          ? 'bg-blue-600/20 text-blue-300'
+                          : auction.status === 'closed'
+                          ? 'bg-gray-600/20 text-gray-300'
+                          : 'bg-gray-700/30 text-gray-300'
+                      }`}
+                    >
+                      {auction.status || 'draft'}
+                    </span>
+                    <span>
+                      {auction.startAt
+                        ? new Date(auction.startAt).toLocaleDateString(undefined, {
+                            dateStyle: 'medium',
+                          })
+                        : 'No start date'}
+                    </span>
+                  </div>
+                  <h2 className="text-lg font-semibold text-white transition group-hover:text-orange-300 sm:text-xl">
+                    {auction.title}
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-400">
+                    {auction.description ? `${auction.description.substring(0, 120)}…` : 'No description provided yet.'}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }
+
+
 
 
 

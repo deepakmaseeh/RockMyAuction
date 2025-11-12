@@ -28,7 +28,7 @@ export default function RootLayout({ children }) {
         <RoleProvider>
           <FormIntegrationSetup />
           {children}
-         <FloatingChatbot /> {/* ✅ Appears on all pages */}
+          <FloatingChatbot /> {/* ✅ Appears on all pages */}
         </RoleProvider>
       </body>
     </html>

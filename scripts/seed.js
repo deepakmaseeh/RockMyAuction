@@ -157,11 +157,124 @@ async function seed() {
       console.log(`Created lot: ${lot.lotNumber} - ${lot.title}`);
     }
 
+    // Demo catalog for UI testing
+    const demoAuction = new Auction({
+      slug: 'demo-modern-collector',
+      title: 'Demo Catalog – The Modern Collector',
+      description: 'Use this catalog to exercise drag/drop, bulk edits, CSV import/export, photo manager and approval flows.',
+      startAt: new Date(Date.now() + 86400000),
+      endAt: new Date(Date.now() + 86400000 * 3),
+      timezone: 'UTC',
+      buyerPremiumPct: 18,
+      status: 'draft'
+    });
+
+    await demoAuction.save();
+
+    const demoLots = [
+      {
+        lotNumber: '101',
+        title: 'Eames Lounge Chair & Ottoman',
+        subtitle: 'Herman Miller, Rosewood & Black Leather',
+        description: 'Iconic mid-century set. Perfect fixture for testing rich text fields.',
+        category: 'Design',
+        companyCategory: 'Furniture',
+        estimateLow: 2500,
+        estimateHigh: 3500,
+        startingBid: 1200,
+        reservePrice: 1800,
+        featured: true,
+        requiresApproval: false,
+        status: 'draft',
+        sequence: 1,
+        attributes: {
+          designer: 'Charles & Ray Eames',
+          condition: 'Excellent',
+          era: '1956',
+        },
+        images: [
+          'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80',
+          'https://images.unsplash.com/photo-1616628182507-ccb7eb5f7329?auto=format&fit=crop&w=800&q=80',
+        ],
+      },
+      {
+        lotNumber: '102',
+        title: 'Omega Speedmaster Professional',
+        subtitle: '“Moonwatch” 1972, Cal. 861',
+        description: 'Classic Speedmaster with tropical dial patina. Requires approval for workflow testing.',
+        category: 'Watches',
+        companyCategory: 'Luxury Timepieces',
+        estimateLow: 6000,
+        estimateHigh: 8000,
+        startingBid: 3200,
+        reservePrice: 5000,
+        featured: false,
+        requiresApproval: true,
+        status: 'draft',
+        sequence: 2,
+        attributes: {
+          reference: '145.022',
+          movement: 'Manual wind',
+          year: '1972',
+        },
+        images: [
+          'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=800&q=80',
+        ],
+      },
+      {
+        lotNumber: '103',
+        title: 'Banksy “Girl with Balloon” Screenprint',
+        subtitle: 'Signed, Edition of 150, 2004',
+        description: 'Use this lot to test CSV export/import and drag ordering.',
+        category: 'Urban Art',
+        companyCategory: 'Street Art',
+        estimateLow: 45000,
+        estimateHigh: 55000,
+        startingBid: 25000,
+        reservePrice: 40000,
+        featured: false,
+        requiresApproval: false,
+        status: 'draft',
+        sequence: 3,
+        attributes: {
+          artist: 'Banksy',
+          edition: '150',
+          medium: 'Screenprint',
+        },
+        images: [
+          'https://images.unsplash.com/photo-1526481280695-3c469207f421?auto=format&fit=crop&w=800&q=80',
+        ],
+      },
+    ];
+
+    for (const [index, lotData] of demoLots.entries()) {
+      const lot = new Lot({
+        ...lotData,
+        auctionId: demoAuction._id,
+        seoSlug: `${demoAuction.slug}-${lotData.lotNumber}`,
+      });
+      await lot.save();
+
+      if (lotData.images) {
+        const lotImages = lotData.images.map((url, i) => ({
+          lotId: lot._id,
+          url,
+          sortOrder: i,
+          alt: lotData.title,
+        }));
+        await LotImage.insertMany(lotImages);
+      }
+    }
+
     console.log(`\n✅ Seed completed successfully!`);
-    console.log(`- Created 1 auction`);
-    console.log(`- Created ${createdLots.length} lots`);
-    console.log(`\nAuction ID: ${auction._id}`);
-    console.log(`Auction slug: ${auction.slug}`);
+    console.log(`- Created 2 auctions (including demo catalog)`);
+    console.log(`- Created ${createdLots.length + demoLots.length} lots`);
+    console.log(`\nDemo catalog ready for testing:`);
+    console.log(`- Auction ID: ${demoAuction._id}`);
+    console.log(`- Auction slug: ${demoAuction.slug}`);
+    console.log(`\nOriginal sample catalog:`);
+    console.log(`- Auction ID: ${auction._id}`);
+    console.log(`- Auction slug: ${auction.slug}`);
 
     process.exit(0);
   } catch (error) {
@@ -176,6 +289,8 @@ if (require.main === module) {
 }
 
 export default seed;
+
+
 
 
 

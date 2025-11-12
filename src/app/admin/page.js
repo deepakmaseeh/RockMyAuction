@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import Navbar from '@/components/Navbar'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 import OverviewTab from '@/components/admin/OverviewTab'
 import UserManagementTab from '@/components/admin/UserManagementTab'
 import AuctionManagementTab from '@/components/admin/AuctionManagementTab';
@@ -53,6 +54,10 @@ export default function AdminDashboardPage() {
   }
 
   const handleAuctionAction = (auctionId, action) => {
+    if (action === 'view') {
+      router.push('/admin/auctions')
+      return
+    }
     alert(`${action} auction ${auctionId} - This would trigger the actual API call`)
   }
 
@@ -73,23 +78,19 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090B] text-white">
-      {/* Use Navbar Component with Admin Badge */}
-      <div className="relative">
-        <Navbar />
-        {/* Admin Badge Overlay */}
-        <div className="absolute top-4 right-4 sm:right-6">
-          <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
-            ADMIN
-          </span>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-[#09090B] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Admin Dashboard</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+              <span className="inline-flex items-center rounded-full bg-red-600 px-3 py-1 text-xs font-bold">
+                ADMIN
+              </span>
+            </div>
             <p className="text-gray-400 text-sm sm:text-base">Monitor and manage your auction platform</p>
           </div>
           
@@ -108,6 +109,37 @@ export default function AdminDashboardPage() {
                 {range}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Catalog Studio CTA */}
+        <div className="mb-6 sm:mb-10">
+          <div className="relative overflow-hidden rounded-2xl border border-[#2a2a2e] bg-gradient-to-br from-[#1f1f45] via-[#13131f] to-[#09090b] p-6 sm:p-8">
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-orange-500/20 blur-3xl" />
+            <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-orange-400/80">Catalog Studio</p>
+                <h2 className="mt-2 text-2xl sm:text-3xl font-semibold text-white">
+                  Build Wavebid-style catalogs in minutes
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm sm:text-base text-gray-400">
+                  Drag-and-drop sequencing, CSV import/export, bulk editing, photo management, and approval workflows.
+                  Optimized for iOS and mobile teams on the go.
+                </p>
+              </div>
+              <div className="flex flex-col sm:items-end gap-3">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-green-400" />
+                  <span>Live preview available</span>
+                </div>
+                <Link
+                  href="/admin/auctions"
+                  className="inline-flex items-center justify-center rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/40 transition hover:translate-y-0.5 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-[#09090B]"
+                >
+                  Open Catalog Studio
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -239,6 +271,28 @@ export default function AdminDashboardPage() {
                         <div className="font-medium text-sm sm:text-base">Reported Items</div>
                       </button>
                     </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#232326] bg-[#18181B] p-4 sm:p-6">
+                  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Auction Management</h3>
+                      <p className="text-sm text-gray-400">Snapshot of trending auctions; jump in with one tap.</p>
+                    </div>
+                    <Link
+                      href="/admin/auctions"
+                      className="inline-flex items-center justify-center rounded-lg border border-orange-500/40 px-4 py-2 text-sm font-semibold text-orange-300 transition hover:border-orange-400 hover:text-orange-200"
+                    >
+                      Go to catalog studio →
+                    </Link>
+                  </div>
+                  <div className="overflow-hidden rounded-xl border border-[#232326]">
+                    <AuctionManagementTab
+                      recentAuctions={recentAuctions}
+                      handleAuctionAction={handleAuctionAction}
+                      getStatusColor={getStatusColor}
+                    />
                   </div>
                 </div>
               </div>
@@ -463,7 +517,9 @@ export default function AdminDashboardPage() {
             )}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   )
 }

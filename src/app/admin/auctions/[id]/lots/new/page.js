@@ -17,24 +17,25 @@ export default function NewLotPage({ params }) {
     }
   }, []);
 
-  const handleSave = async (lotData) => {
-    try {
-      const res = await fetch(`/api/admin/auctions/${auctionId}/lots`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(lotData)
-      });
+  const handleSubmit = async (lotData, intent = 'save') => {
+    const res = await fetch(`/api/admin/auctions/${auctionId}/lots`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(lotData),
+    });
 
-      const data = await res.json();
-      if (data.success) {
-        router.push(`/admin/auctions/${auctionId}`);
-      } else {
-        alert('Error: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Error saving lot:', error);
-      alert('Error saving lot');
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to create lot');
     }
+
+    if (intent === 'save') {
+      router.push(`/admin/auctions/${auctionId}`);
+    } else if (intent === 'saveNext') {
+      router.replace(`/admin/auctions/${auctionId}/lots/new`);
+    }
+
+    return data.data;
   };
 
   if (!auctionId) {
@@ -45,11 +46,13 @@ export default function NewLotPage({ params }) {
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Create New Lot</h1>
-        <LotForm auctionId={auctionId} onSave={handleSave} onCancel={() => router.back()} />
+        <LotForm onSubmit={handleSubmit} onCancel={() => router.back()} />
       </div>
     </div>
   );
 }
+
+
 
 
 

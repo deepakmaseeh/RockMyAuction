@@ -60,3 +60,55 @@ body {
     -webkit-tap-highlight-color: rgba(251, 146, 60, 0.3);
   }
 }
+
+.rich-text-editor .rt-toolbar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background-color: #1f1f23;
+  border: 1px solid #2e2e32;
+  border-bottom: none;
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+}
+
+.rich-text-editor .rt-button {
+  background: #27272f;
+  border: 1px solid #3a3a45;
+  color: #f5f5f5;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.rich-text-editor .rt-button:hover,
+.rich-text-editor .rt-button:focus {
+  background: #fb923c;
+  border-color: #fb923c;
+  color: #0f0f12;
+}
+
+.rich-text-editor .rt-editor {
+  min-height: 170px;
+  background-color: #111114;
+  border: 1px solid #2e2e32;
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+  padding: 1rem;
+  color: #f5f5f5;
+  font-size: 0.95rem;
+  overflow-y: auto;
+}
+
+.rich-text-editor .rt-editor:focus {
+  outline: none;
+  border-color: #fb923c;
+}
+
+.rich-text-editor .rt-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #6b7280;
+  pointer-events: none;
+}
