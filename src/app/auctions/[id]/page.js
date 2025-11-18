@@ -828,26 +828,18 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '../../../components/Navbar'
 import Footer from '../../../components/Footer'
+import auctionAPI from '@/lib/auctionAPI'
 
-// ✅ NEW: API Integration Functions
-const API_BASE_URL = 'https://excellwebsolution.com'
+// ✅ NEW: API Integration Functions using API service
 
 // Get single auction by ID
 const getAuctionById = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auctions/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
-    const auction = await response.json()
-    return auction
+    const response = await auctionAPI.getAuction(id)
+    // Handle different response formats
+    if (response.data) return response.data
+    if (response.auction) return response.auction
+    return response
   } catch (error) {
     console.error('Error fetching auction:', error)
     return null
@@ -857,73 +849,37 @@ const getAuctionById = async (id) => {
 // Get bids for auction
 const getBidsForAuction = async (auctionId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/bids/${auctionId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
-    const bids = await response.json()
-    return bids
+    const response = await auctionAPI.getBids(auctionId)
+    // Handle different response formats
+    if (response.data) return Array.isArray(response.data) ? response.data : []
+    if (Array.isArray(response)) return response
+    if (Array.isArray(response.bids)) return response.bids
+    return []
   } catch (error) {
     console.error('Error fetching bids:', error)
     return []
   }
 }
 
-// ✅ ENHANCED: Place a bid with token from localStorage
+// ✅ ENHANCED: Place a bid using API service
 const placeBid = async (auctionId, bidAmount) => {
   try {
-    const token = localStorage.getItem('token')
-    
-    const response = await fetch(`${API_BASE_URL}/api/bids`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token.replace('Bearer ', '')}` })
-      },
-      body: JSON.stringify({
-        auctionId,
-        bidAmount: parseFloat(bidAmount)
-      }),
+    const response = await auctionAPI.placeBid({
+      auctionId,
+      bidAmount: parseFloat(bidAmount)
     })
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-    }
-    
-    const bid = await response.json()
-    return bid
+    return response
   } catch (error) {
     console.error('Error placing bid:', error)
     throw error
   }
 }
 
-// Generate AI analysis
-const generateAIAnalysis = async (prompt, token) => {
+// Generate AI analysis using API service
+const generateAIAnalysis = async (prompt) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/ai/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      },
-      body: JSON.stringify({ prompt }),
-    })
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
-    const result = await response.json()
-    return result
+    const response = await auctionAPI.generateAIContent({ prompt })
+    return response
   } catch (error) {
     console.error('Error generating AI analysis:', error)
     return null

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import auctionAPI from '@/lib/auctionAPI'
 
 export default function CatalogueDetailPage() {
   const router = useRouter()
@@ -13,7 +14,7 @@ export default function CatalogueDetailPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (params?.id) {
+    if (params?.id && params.id !== 'undefined') {
       loadCatalogue()
       loadLots()
     }
@@ -21,11 +22,15 @@ export default function CatalogueDetailPage() {
 
   const loadCatalogue = async () => {
     try {
-      const response = await fetch(`/api/catalogues/${params.id}`)
-      const data = await response.json()
+      const response = await auctionAPI.getCatalogue(params.id)
       
-      if (data.success) {
-        setCatalogue(data.catalogue)
+      // Handle different response formats
+      if (response.success && response.catalogue) {
+        setCatalogue(response.catalogue)
+      } else if (response.data) {
+        setCatalogue(response.data)
+      } else if (response._id) {
+        setCatalogue(response)
       } else {
         setError('Failed to load catalogue')
       }
@@ -39,11 +44,15 @@ export default function CatalogueDetailPage() {
 
   const loadLots = async () => {
     try {
-      const response = await fetch(`/api/lots?catalogue=${params.id}`)
-      const data = await response.json()
+      const response = await auctionAPI.getLots({ catalogue: params.id })
       
-      if (data.success) {
-        setLots(data.lots || [])
+      // Handle different response formats
+      if (response.success && response.lots) {
+        setLots(response.lots || [])
+      } else if (response.data && Array.isArray(response.data)) {
+        setLots(response.data)
+      } else if (Array.isArray(response)) {
+        setLots(response)
       }
     } catch (err) {
       console.error('Error loading lots:', err)
@@ -56,12 +65,9 @@ export default function CatalogueDetailPage() {
     }
 
     try {
-      const response = await fetch(`/api/lots/${lotId}`, {
-        method: 'DELETE'
-      })
-      const data = await response.json()
+      const response = await auctionAPI.deleteLot(lotId)
       
-      if (data.success) {
+      if (response.success || response) {
         loadLots()
         loadCatalogue()
       } else {

@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUserRole } from '@/contexts/RoleContext'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
+import auctionAPI from '@/lib/auctionAPI'
 
 export default function EditProfilePage() {
   const router = useRouter()
@@ -13,14 +16,56 @@ export default function EditProfilePage() {
   const [errors, setErrors] = useState({})
   
   const [formData, setFormData] = useState({
-    name: user?.name || 'Alex Thompson',
-    email: user?.email || 'alex@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'New York, NY',
-    bio: 'Passionate collector of vintage watches and rare books. Been trading on Rock the Auction for 2 years.',
-    website: 'https://alexcollects.com',
-    avatar: null
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    location: '',
+    bio: '',
+    website: '',
+    avatar: user?.avatar || null
   })
+
+  // Load user profile data on mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await auctionAPI.getCurrentUser();
+        if (response.success && response.data) {
+          const userData = response.data;
+          // Handle address - convert object to string if needed
+          let addressDisplay = '';
+          if (userData.address) {
+            if (typeof userData.address === 'string') {
+              addressDisplay = userData.address;
+            } else if (typeof userData.address === 'object') {
+              // Format address object as string for display
+              const addr = userData.address;
+              if (addr.country) {
+                addressDisplay = addr.country;
+              } else if (addr.city) {
+                addressDisplay = addr.city;
+              } else if (addr.street) {
+                addressDisplay = [addr.street, addr.city, addr.state, addr.country].filter(Boolean).join(', ');
+              }
+            }
+          }
+          
+          setFormData(prev => ({
+            ...prev,
+            name: userData.name || prev.name,
+            email: userData.email || prev.email,
+            phone: userData.phone || prev.phone,
+            address: addressDisplay || prev.address,
+            location: addressDisplay || prev.location,
+            avatar: userData.avatar || prev.avatar
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    };
+    loadProfile();
+  }, [])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -55,14 +100,46 @@ export default function EditProfilePage() {
     }
 
     setIsUploading(true)
+    setErrors(prev => ({ ...prev, avatar: '' }))
+    
     try {
-      // Simulate upload
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      setFormData(prev => ({ ...prev, avatar: URL.createObjectURL(file) }))
-      setErrors(prev => ({ ...prev, avatar: '' }))
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64String = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
+          
+          // Upload to GCS
+          const uploadResponse = await auctionAPI.uploadProfilePhoto({
+            file: base64String,
+            fileName: file.name,
+            fileType: file.type
+          });
+
+          if (uploadResponse.success && uploadResponse.fileUrl) {
+            // Update form data with the new profile photo URL
+            setFormData(prev => ({ ...prev, avatar: uploadResponse.fileUrl }))
+            setErrors(prev => ({ ...prev, avatar: '' }))
+          } else {
+            throw new Error('Upload failed - no URL returned');
+          }
+        } catch (error) {
+          console.error('Profile photo upload error:', error);
+          setErrors(prev => ({ ...prev, avatar: error.message || 'Failed to upload profile photo' }))
+        } finally {
+          setIsUploading(false)
+        }
+      };
+      
+      reader.onerror = () => {
+        setErrors(prev => ({ ...prev, avatar: 'Failed to read image file' }))
+        setIsUploading(false)
+      };
+      
+      reader.readAsDataURL(file);
     } catch (error) {
-      setErrors(prev => ({ ...prev, avatar: 'Failed to upload image' }))
-    } finally {
+      console.error('Profile photo upload error:', error);
+      setErrors(prev => ({ ...prev, avatar: error.message || 'Failed to upload image' }))
       setIsUploading(false)
     }
   }
@@ -102,21 +179,118 @@ export default function EditProfilePage() {
     setIsSaving(true)
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Prepare profile data
+      // Handle address - can be string or object
+      let addressValue = '';
+      if (formData.address) {
+        if (typeof formData.address === 'string') {
+          addressValue = formData.address.trim();
+        } else if (typeof formData.address === 'object') {
+          // If address is an object, extract country or format as string
+          addressValue = formData.address.country || formData.address.city || 
+                        (formData.address.street ? `${formData.address.street}, ${formData.address.city || ''}, ${formData.address.country || ''}`.trim() : '') || '';
+        }
+      }
+      if (!addressValue && formData.location) {
+        addressValue = typeof formData.location === 'string' ? formData.location.trim() : '';
+      }
       
-      // Update user context
-      setUser(prev => ({
-        ...prev,
-        name: formData.name,
-        email: formData.email
-      }))
+      const profileData = {
+        name: formData.name?.trim() || '',
+        email: formData.email?.trim() || '',
+        phone: formData.phone?.trim() || '',
+        address: addressValue
+      };
       
-      alert('Profile updated successfully!')
-      router.push('/profile')
+      console.log('Sending profile update:', profileData);
+
+      // Include profile photo if it was uploaded
+      if (formData.avatar && formData.avatar.startsWith('http')) {
+        profileData.profilePhoto = formData.avatar;
+      }
+
+      // Update profile via API
+      let response;
+      try {
+        response = await auctionAPI.updateUserProfile(profileData);
+        console.log('Profile update response:', response);
+      } catch (apiError) {
+        console.error('API Error:', apiError);
+        throw new Error(apiError.message || 'Failed to update profile. Please try again.');
+      }
+      
+      // Check if response is valid
+      if (!response) {
+        throw new Error('No response from server. Please try again.');
+      }
+      
+      if (response.success) {
+        // Get updated user data from response
+        const updatedUserData = response.data || response;
+        
+        // Update user context with complete data from backend
+        const updatedUser = {
+          id: updatedUserData._id || updatedUserData.id || user?.id,
+          _id: updatedUserData._id || updatedUserData.id || user?._id,
+          name: updatedUserData.name || formData.name,
+          email: updatedUserData.email || formData.email,
+          phone: updatedUserData.phone || formData.phone,
+          avatar: updatedUserData.avatar || formData.avatar || user?.avatar,
+          address: updatedUserData.address || formData.address
+        };
+        
+        console.log('Updating user context with:', updatedUser);
+        setUser(updatedUser);
+        
+        // Update localStorage with complete user data
+        try {
+          const storedUserData = localStorage.getItem('user-data');
+          let userData = {};
+          
+          if (storedUserData && storedUserData !== 'undefined' && storedUserData !== 'null') {
+            try {
+              userData = JSON.parse(storedUserData);
+            } catch (parseError) {
+              console.error('Failed to parse user-data from localStorage:', parseError);
+              userData = {};
+            }
+          }
+          
+          // Update with all fields from backend response
+          userData.id = updatedUser.id;
+          userData._id = updatedUser._id;
+          userData.name = updatedUser.name;
+          userData.email = updatedUser.email;
+          userData.phone = updatedUser.phone;
+          if (updatedUser.avatar) {
+            userData.avatar = updatedUser.avatar;
+          }
+          if (updatedUser.address) {
+            userData.address = updatedUser.address;
+          }
+          
+          localStorage.setItem('user-data', JSON.stringify(userData));
+          console.log('Updated localStorage:', userData);
+        } catch (storageError) {
+          console.error('Failed to update localStorage:', storageError);
+          // Continue even if localStorage update fails
+        }
+        
+        alert('Profile updated successfully!')
+        // Navigate to profile page - it will reload data automatically
+        router.push('/profile')
+        // Force a refresh to ensure data is reloaded
+        setTimeout(() => {
+          window.location.reload()
+        }, 100)
+      } else {
+        throw new Error(response.error || 'Failed to update profile');
+      }
       
     } catch (error) {
-      alert('Failed to update profile. Please try again.')
+      console.error('Profile update error:', error);
+      const errorMessage = error?.message || error?.toString() || 'Failed to update profile. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSaving(false)
     }
@@ -124,20 +298,7 @@ export default function EditProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white">
-      {/* Mobile-Responsive Header */}
-      <div className="bg-[#18181B] border-b border-[#232326]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="text-xl sm:text-2xl font-bold text-orange-500 flex items-center gap-2">
-              <img src="/rock_my_auction_logo.png" alt="Rock My Auction" className="h-6 sm:h-8 w-auto" />
-            </Link>
-            <Link href="/profile" className="text-gray-400 hover:text-orange-400 transition text-sm sm:text-base">
-              <span className="hidden sm:inline">← Back to Profile</span>
-              <span className="sm:hidden">← Back</span>
-            </Link>
-          </div>
-        </div>
-      </div>
+      <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {/* Mobile-Responsive Page Header */}
@@ -307,6 +468,8 @@ export default function EditProfilePage() {
           </div>
         </form>
       </div>
+      
+      <Footer />
     </div>
   )
 }

@@ -12,8 +12,20 @@ function RoleSwitcher() {
     <div className="mb-4 sm:mb-6">
       {/* User Profile Section */}
       <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-2 sm:p-3 bg-[#232326] rounded-lg">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base flex-shrink-0">
-          {user?.name?.charAt(0) || 'U'}
+        {user?.avatar ? (
+          <img
+            src={user.avatar}
+            alt={user?.name || 'Profile'}
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-orange-500 flex-shrink-0"
+            onError={(e) => {
+              // Fallback to initials if image fails to load
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div className={`w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base flex-shrink-0 ${user?.avatar ? 'hidden' : ''}`}>
+          {user?.name?.charAt(0)?.toUpperCase() || 'U'}
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-medium text-white truncate text-sm sm:text-base">{user?.name || 'User'}</div>
@@ -60,6 +72,7 @@ function DynamicNavigation({ onNavigate }) {
   const sellerLinks = [
     { href: '/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: '📊' },
     { href: '/seller/new-auction', label: 'List New Item', shortLabel: 'Add', icon: '➕', highlight: true },
+    { href: '/my-auctions', label: 'My Auctions', shortLabel: 'My Auctions', icon: '📦' },
     { href: '/catalogues', label: 'Catalogue', shortLabel: 'Catalog', icon: '📚' },
     { href: '/seller/active-auctions', label: 'Active Listings', shortLabel: 'Active', icon: '🔥' },
     { href: '/seller/analytics', label: 'Analytics', shortLabel: 'Stats', icon: '📈' },
@@ -73,7 +86,7 @@ function DynamicNavigation({ onNavigate }) {
   const buyerLinks = [
     { href: '/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: '📊' },
     { href: '/auctions', label: 'Browse Auctions', shortLabel: 'Browse', icon: '🔍', highlight: true },
-    { href: '/watchlist', label: 'My Wishlist', shortLabel: 'Watch', icon: '👁️' },
+    { href: '/profile?tab=wishlist', label: 'My Wishlist', shortLabel: 'Wishlist', icon: '❤️' },
     { href: '/bids', label: 'My Bids', shortLabel: 'Bids', icon: '🏷️' },
     { href: '/purchases', label: 'My Purchases', shortLabel: 'Bought', icon: '📦' },
     { href: '/messages', label: 'Messages', shortLabel: 'Chat', icon: '💬' },

@@ -273,7 +273,7 @@ export default function LoginPage() {
         id: response._id,
         name: response.name,
         email: response.email,
-        avatar: '/avatars/user.jpg',
+        avatar: response.avatar || null, // Use avatar from API response, or null if not set
         joinedDate: '2024',
         rating: 4.5,
         totalSales: 0,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import auctionAPI from '@/lib/auctionAPI';
 
 export default function AIAssistPanel({ images, onGenerate, onClose }) {
   const [loading, setLoading] = useState(false);
@@ -19,24 +20,23 @@ export default function AIAssistPanel({ images, onGenerate, onClose }) {
 
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/generateLotDraft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageUrls: images,
-          ...baseline
-        })
+      const prompt = `Generate lot draft for: ${baseline.title || 'item'}${baseline.category ? ` (Category: ${baseline.category})` : ''}${baseline.description ? ` - ${baseline.description}` : ''}`;
+      
+      const response = await auctionAPI.generateLotDraft(prompt, {
+        imageUrls: images,
+        ...baseline
       });
-
-      const data = await res.json();
-      if (data.success) {
-        setDraft(data.draft);
+      
+      // Handle different response formats
+      const draftData = response.draft || response.data || response;
+      if (draftData) {
+        setDraft(draftData);
       } else {
-        alert('Error: ' + data.error);
+        alert('Error: ' + (response.error || 'Failed to generate draft'));
       }
     } catch (error) {
       console.error('Error generating draft:', error);
-      alert('Error generating draft');
+      alert('Error generating draft: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }

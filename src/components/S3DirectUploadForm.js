@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react';
+import auctionAPI from '@/lib/auctionAPI';
 
-export default function S3DirectUploadForm() {
+export default function GCSDirectUploadForm() {
   const [file, setFile] = useState(null);
   const [uploadURL, setUploadURL] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -19,17 +20,21 @@ export default function S3DirectUploadForm() {
       return;
     }
 
-    // Get environment variables from .env.local
-    const bucketName = process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'my-s3-bucket-auctiondata';
-    const region = process.env.NEXT_PUBLIC_AWS_REGION || 'ap-south-1';
-    const fileName = `${Date.now()}-${file.name}`;
-    const s3URL = `https://${bucketName}.s3.${region}.amazonaws.com/${fileName}`;
-
     try {
       setUploading(true);
       setError('');
       
-      const res = await fetch(s3URL, {
+      // Get presigned URL from backend using API service
+      const presignedData = await auctionAPI.getUploadUrl(file.name, file.type);
+      
+      if (!presignedData || !presignedData.url || !presignedData.fileUrl) {
+        throw new Error(presignedData?.error || 'Failed to get upload URL');
+      }
+
+      const { url, fileUrl } = presignedData;
+
+      // Upload file to Google Cloud Storage using presigned URL
+      const uploadResponse = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': file.type,
@@ -37,15 +42,15 @@ export default function S3DirectUploadForm() {
         body: file,
       });
 
-      if (res.ok) {
-        setUploadURL(s3URL);
-        alert('✅ File uploaded successfully!');
+      if (uploadResponse.ok) {
+        setUploadURL(fileUrl);
+        alert('✅ File uploaded successfully to Google Cloud Storage!');
       } else {
-        setError(`Upload failed. Status: ${res.status}`);
+        setError(`Upload failed. Status: ${uploadResponse.status}`);
       }
     } catch (error) {
       console.error('Upload error:', error);
-      setError('Upload error. See console for details.');
+      setError(error.message || 'Upload error. See console for details.');
     } finally {
       setUploading(false);
     }

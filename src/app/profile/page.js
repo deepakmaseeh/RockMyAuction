@@ -1,25 +1,54 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useUserRole } from '@/contexts/RoleContext'
+import { useWatchlist } from '@/contexts/WishlistContext'
+import WishlistButton from '@/components/WishlistButton'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
+import auctionAPI from '@/lib/auctionAPI'
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const router = useRouter()
-  const { user, setUser } = useUserRole()
+  const searchParams = useSearchParams()
+  const { user, setUser, isAuthenticated, logout } = useUserRole()
+  const { watchlistItems, loading: wishlistLoading, loadWatchlist } = useWatchlist()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState('profile')
+  const [isUploading, setIsUploading] = useState(false)
+  
+  // Get initial tab from URL parameter
+  const [activeTab, setActiveTab] = useState(() => {
+    const tab = searchParams.get('tab');
+    return (tab && ['profile', 'wishlist', 'notifications', 'privacy'].includes(tab)) ? tab : 'profile';
+  })
+  
+  // Update tab when URL parameter changes
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['profile', 'wishlist', 'notifications', 'privacy'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams])
+  
+  // Load wishlist when wishlist tab is active (only once per tab switch)
+  useEffect(() => {
+    if (activeTab === 'wishlist' && isAuthenticated && !wishlistLoading) {
+      loadWatchlist()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, isAuthenticated]) // Don't include loadWatchlist to prevent loops
   
   const [formData, setFormData] = useState({
-    name: user?.name || 'Alex Thompson',
-    email: user?.email || 'alex@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'New York, NY',
-    bio: 'Passionate collector of vintage watches and rare books. Been trading on Rock the Auction for 2 years.',
-    website: 'https://alexcollects.com',
-    profilePicture: user?.profilePicture || null,
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    location: '',
+    bio: '',
+    website: '',
+    profilePicture: user?.avatar || null,
     notifications: {
       email: true,
       sms: false,
@@ -37,31 +66,111 @@ export default function ProfilePage() {
     }
   })
 
-  // Load profile picture from localStorage on mount
+  // Redirect to login if not authenticated
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('user-data') || '{}')
-    if (userData.profilePicture) {
-      setFormData(prev => ({ ...prev, profilePicture: userData.profilePicture }))
+    if (!isAuthenticated) {
+      router.push('/login');
     }
-  }, [])
+  }, [isAuthenticated, router]);
 
-  const [stats] = useState({
-    totalSales: 145,
-    totalPurchases: 89,
-    totalRevenue: 28450,
-    totalSpent: 15230,
-    rating: 4.8,
-    reviewCount: 234,
-    memberSince: '2022',
-    successRate: 94
-  })
+  // Load user profile data from API on mount and when user changes
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        const response = await auctionAPI.getCurrentUser();
+        console.log('Profile data loaded:', response);
+        
+        if (response.success && response.data) {
+          const userData = response.data;
+          // Handle address - convert object to string if needed
+          let addressDisplay = '';
+          if (userData.address) {
+            if (typeof userData.address === 'string') {
+              addressDisplay = userData.address;
+            } else if (typeof userData.address === 'object') {
+              // Format address object as string for display
+              const addr = userData.address;
+              if (addr.country) {
+                addressDisplay = addr.country;
+              } else if (addr.city) {
+                addressDisplay = addr.city;
+              } else if (addr.street) {
+                addressDisplay = [addr.street, addr.city, addr.state, addr.country].filter(Boolean).join(', ');
+              }
+            }
+          }
+          
+          setFormData(prev => ({
+            ...prev,
+            name: userData.name || prev.name,
+            email: userData.email || prev.email,
+            phone: userData.phone || prev.phone,
+            address: addressDisplay || prev.address,
+            location: addressDisplay || userData.location || prev.location,
+            bio: userData.bio || prev.bio,
+            website: userData.website || prev.website,
+            profilePicture: userData.avatar || prev.profilePicture
+          }));
+          
+          // Update user context with complete data
+          setUser({
+            ...user,
+            id: userData._id || userData.id || user?.id,
+            _id: userData._id || userData.id || user?._id,
+            name: userData.name,
+            email: userData.email,
+            phone: userData.phone,
+            avatar: userData.avatar
+          });
+        } else if (response.data) {
+          // Handle case where response.data is the user object directly
+          const userData = response.data;
+          // Handle address - convert object to string if needed
+          let addressDisplay = '';
+          if (userData.address) {
+            if (typeof userData.address === 'string') {
+              addressDisplay = userData.address;
+            } else if (typeof userData.address === 'object') {
+              // Format address object as string for display
+              const addr = userData.address;
+              if (addr.country) {
+                addressDisplay = addr.country;
+              } else if (addr.city) {
+                addressDisplay = addr.city;
+              } else if (addr.street) {
+                addressDisplay = [addr.street, addr.city, addr.state, addr.country].filter(Boolean).join(', ');
+              }
+            }
+          }
+          
+          setFormData(prev => ({
+            ...prev,
+            name: userData.name || prev.name,
+            email: userData.email || prev.email,
+            phone: userData.phone || prev.phone,
+            address: addressDisplay || prev.address,
+            location: addressDisplay || userData.location || prev.location,
+            bio: userData.bio || prev.bio,
+            website: userData.website || prev.website,
+            profilePicture: userData.avatar || prev.profilePicture
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    };
+    loadProfile();
+  }, [isAuthenticated, user?._id]) // Reload when user ID changes
 
-  const [recentActivity] = useState([
-    { type: 'sold', item: 'Vintage Rolex Datejust', amount: 2550, date: '2 days ago' },
-    { type: 'won', item: 'First Edition Harry Potter', amount: 3500, date: '1 week ago' },
-    { type: 'bid', item: 'Abstract Art Sculpture', amount: 2800, date: '3 days ago' },
-    { type: 'listed', item: 'Baseball Card Collection', amount: 1500, date: '5 days ago' }
-  ])
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      await logout();
+      router.push('/');
+    }
+  }
+
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -77,25 +186,65 @@ export default function ProfilePage() {
       return
     }
 
+    setIsUploading(true)
     try {
-      // Read file as data URL for preview
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const imageUrl = event.target.result
-        setFormData(prev => ({ ...prev, profilePicture: imageUrl }))
-        
-        // Update user context
-        setUser(prev => ({ ...prev, profilePicture: imageUrl }))
-        
-        // Save to localStorage
-        const userData = JSON.parse(localStorage.getItem('user-data') || '{}')
-        userData.profilePicture = imageUrl
-        localStorage.setItem('user-data', JSON.stringify(userData))
-      }
-      reader.readAsDataURL(file)
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64String = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
+          
+          // Upload to GCS
+          const uploadResponse = await auctionAPI.uploadProfilePhoto({
+            file: base64String,
+            fileName: file.name,
+            fileType: file.type
+          });
+
+          if (uploadResponse.success && uploadResponse.fileUrl) {
+            // Update form data with the new profile photo URL
+            setFormData(prev => ({ ...prev, profilePicture: uploadResponse.fileUrl }))
+            
+            // Update user context
+            setUser(prev => ({
+              ...prev,
+              avatar: uploadResponse.fileUrl
+            }))
+            
+            // Save to localStorage
+            let userData = {};
+            try {
+              const storedUserData = localStorage.getItem('user-data');
+              if (storedUserData && storedUserData !== 'undefined' && storedUserData !== 'null') {
+                userData = JSON.parse(storedUserData);
+              }
+            } catch (parseError) {
+              console.error('Failed to parse user-data from localStorage:', parseError);
+              userData = {};
+            }
+            userData.avatar = uploadResponse.fileUrl
+            localStorage.setItem('user-data', JSON.stringify(userData))
+          } else {
+            throw new Error('Upload failed - no URL returned');
+          }
+        } catch (error) {
+          console.error('Profile photo upload error:', error);
+          alert(error.message || 'Failed to upload profile photo')
+        } finally {
+          setIsUploading(false)
+        }
+      };
+      
+      reader.onerror = () => {
+        alert('Failed to read image file')
+        setIsUploading(false)
+      };
+      
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading avatar:', error)
       alert('Failed to upload image')
+      setIsUploading(false)
     }
   }
 
@@ -123,62 +272,158 @@ export default function ProfilePage() {
     setIsSaving(true)
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Prepare profile data
+      // Handle address - can be string or object
+      let addressValue = '';
+      if (formData.address) {
+        if (typeof formData.address === 'string') {
+          addressValue = formData.address.trim();
+        } else if (typeof formData.address === 'object') {
+          // If address is an object, extract country or format as string
+          addressValue = formData.address.country || formData.address.city || 
+                        (formData.address.street ? `${formData.address.street}, ${formData.address.city || ''}, ${formData.address.country || ''}`.trim() : '') || '';
+        }
+      }
+      if (!addressValue && formData.location) {
+        addressValue = typeof formData.location === 'string' ? formData.location.trim() : '';
+      }
       
-      // Update user context
-      setUser(prev => ({
-        ...prev,
-        name: formData.name,
-        email: formData.email
-      }))
+      const profileData = {
+        name: formData.name?.trim() || '',
+        email: formData.email?.trim() || '',
+        phone: formData.phone?.trim() || '',
+        address: addressValue
+      };
       
-      setIsEditing(false)
-      alert('Profile updated successfully!')
+      console.log('Sending profile update:', profileData);
+
+      // Include profile photo if it was uploaded
+      if (formData.profilePicture && formData.profilePicture.startsWith('http')) {
+        profileData.profilePhoto = formData.profilePicture;
+      }
+
+      // Update profile via API
+      let response;
+      try {
+        response = await auctionAPI.updateUserProfile(profileData);
+        console.log('Profile update response:', response);
+      } catch (apiError) {
+        console.error('API Error:', apiError);
+        throw new Error(apiError.message || 'Failed to update profile. Please try again.');
+      }
+      
+      // Check if response is valid
+      if (!response) {
+        throw new Error('No response from server. Please try again.');
+      }
+      
+      if (response.success) {
+        // Get updated user data from response
+        const updatedUserData = response.data || response;
+        
+        // Update user context with complete data from backend
+        const updatedUser = {
+          id: updatedUserData._id || updatedUserData.id || user?.id,
+          _id: updatedUserData._id || updatedUserData.id || user?._id,
+          name: updatedUserData.name || formData.name,
+          email: updatedUserData.email || formData.email,
+          phone: updatedUserData.phone || formData.phone,
+          avatar: updatedUserData.avatar || formData.profilePicture || user?.avatar,
+          address: updatedUserData.address || formData.address
+        };
+        
+        console.log('Updating user context with:', updatedUser);
+        setUser(updatedUser);
+        
+        // Update localStorage with complete user data
+        try {
+          const storedUserData = localStorage.getItem('user-data');
+          let userData = {};
+          
+          if (storedUserData && storedUserData !== 'undefined' && storedUserData !== 'null') {
+            try {
+              userData = JSON.parse(storedUserData);
+            } catch (parseError) {
+              console.error('Failed to parse user-data from localStorage:', parseError);
+              userData = {};
+            }
+          }
+          
+          // Update with all fields from backend response
+          userData.id = updatedUser.id;
+          userData._id = updatedUser._id;
+          userData.name = updatedUser.name;
+          userData.email = updatedUser.email;
+          userData.phone = updatedUser.phone;
+          if (updatedUser.avatar) {
+            userData.avatar = updatedUser.avatar;
+          }
+          if (updatedUser.address) {
+            userData.address = updatedUser.address;
+          }
+          
+          localStorage.setItem('user-data', JSON.stringify(userData));
+          console.log('Updated localStorage:', userData);
+        } catch (storageError) {
+          console.error('Failed to update localStorage:', storageError);
+          // Continue even if localStorage update fails
+        }
+        
+        setIsEditing(false)
+        alert('Profile updated successfully!')
+        
+        // Reload profile data from API to ensure we have the latest
+        try {
+          const reloadResponse = await auctionAPI.getCurrentUser();
+          if (reloadResponse.success && reloadResponse.data) {
+            const userData = reloadResponse.data;
+            // Handle address - convert object to string if needed
+            let addressDisplay = '';
+            if (userData.address) {
+              if (typeof userData.address === 'string') {
+                addressDisplay = userData.address;
+              } else if (typeof userData.address === 'object') {
+                // Format address object as string for display
+                const addr = userData.address;
+                if (addr.country) {
+                  addressDisplay = addr.country;
+                } else if (addr.city) {
+                  addressDisplay = addr.city;
+                } else if (addr.street) {
+                  addressDisplay = [addr.street, addr.city, addr.state, addr.country].filter(Boolean).join(', ');
+                }
+              }
+            }
+            
+            setFormData(prev => ({
+              ...prev,
+              name: userData.name || prev.name,
+              email: userData.email || prev.email,
+              phone: userData.phone || prev.phone,
+              address: addressDisplay || prev.address,
+              location: addressDisplay || userData.location || prev.location,
+              bio: userData.bio || prev.bio,
+              website: userData.website || prev.website,
+              profilePicture: userData.avatar || prev.profilePicture
+            }));
+          }
+        } catch (reloadError) {
+          console.error('Failed to reload profile:', reloadError);
+        }
+      } else {
+        throw new Error(response.error || 'Failed to update profile');
+      }
     } catch (error) {
-      alert('Failed to update profile. Please try again.')
+      console.error('Profile update error:', error);
+      alert(error.message || 'Failed to update profile. Please try again.')
     } finally {
       setIsSaving(false)
     }
   }
 
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case 'sold': return '💰'
-      case 'won': return '🏆'
-      case 'bid': return '🏷️'
-      case 'listed': return '📦'
-      default: return '📍'
-    }
-  }
-
-  const getActivityColor = (type) => {
-    switch (type) {
-      case 'sold': return 'text-green-400'
-      case 'won': return 'text-blue-400'
-      case 'bid': return 'text-orange-400'
-      case 'listed': return 'text-purple-400'
-      default: return 'text-gray-400'
-    }
-  }
-
   return (
     <div className="min-h-screen bg-[#09090B] text-white">
-      {/* Mobile-optimized Header */}
-      <div className="bg-[#18181B] border-b border-[#232326]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-lg sm:text-2xl font-bold text-orange-500 flex items-center gap-2">
-              <span><img src="/RMA-Logo.png" alt="Logo" className="h-12 content-center" /></span>
-              {/* <span className="sm:hidden">RMA</span> */}
-            </Link>
-            <Link href="/dashboard" className="text-gray-400 hover:text-orange-400 transition text-sm sm:text-base">
-              <span className="hidden sm:inline">← Back to Dashboard</span>
-              <span className="sm:hidden">← Back</span>
-            </Link>
-          </div>
-        </div>
-      </div>
+      <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Mobile-optimized Profile Header */}
@@ -201,25 +446,24 @@ export default function ProfilePage() {
                 
                 {/* Upload Button */}
                 {isEditing && (
-                  <label className="absolute -bottom-1 -right-1 w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-600 transition border-4 border-[#18181B]">
+                  <label className={`absolute -bottom-1 -right-1 w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-600 transition border-4 border-[#18181B] ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleAvatarUpload}
                       className="hidden"
+                      disabled={isUploading}
                     />
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                    {isUploading ? (
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
                   </label>
                 )}
-              </div>
-              
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full border-4 border-[#18181B] flex items-center justify-center">
-                <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
               </div>
             </div>
 
@@ -227,17 +471,15 @@ export default function ProfilePage() {
             <div className="flex-1 text-center sm:text-left">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
                 <h1 className="text-xl sm:text-2xl font-bold">{formData.name}</h1>
-                <div className="flex items-center justify-center sm:justify-start gap-1 text-orange-400">
-                  <span>⭐</span>
-                  <span className="font-semibold">{stats.rating}</span>
-                  <span className="text-gray-400 text-sm">({stats.reviewCount} reviews)</span>
-                </div>
               </div>
-              <p className="text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">{formData.bio}</p>
+              {formData.bio && (
+                <p className="text-gray-300 mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed line-clamp-2">{formData.bio}</p>
+              )}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs sm:text-sm text-gray-400">
-                <span>📍 {formData.location}</span>
-                <span>📅 Member since {stats.memberSince}</span>
-                <span>✅ {stats.successRate}% success rate</span>
+                {formData.location && <span>📍 {formData.location}</span>}
+                {user?.createdAt && (
+                  <span>📅 Member since {new Date(user.createdAt).getFullYear()}</span>
+                )}
               </div>
             </div>
 
@@ -251,38 +493,25 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Mobile-responsive Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326] text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-green-400">{stats.totalSales}</div>
-            <div className="text-xs sm:text-sm text-gray-400">Items Sold</div>
-          </div>
-          <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326] text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-blue-400">{stats.totalPurchases}</div>
-            <div className="text-xs sm:text-sm text-gray-400">Items Bought</div>
-          </div>
-          <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326] text-center">
-            <div className="text-xl sm:text-3xl font-bold text-orange-400">${stats.totalRevenue.toLocaleString()}</div>
-            <div className="text-xs sm:text-sm text-gray-400">Total Revenue</div>
-          </div>
-          <div className="bg-[#18181B] rounded-lg sm:rounded-xl p-4 sm:p-6 border border-[#232326] text-center">
-            <div className="text-xl sm:text-3xl font-bold text-purple-400">${stats.totalSpent.toLocaleString()}</div>
-            <div className="text-xs sm:text-sm text-gray-400">Total Spent</div>
-          </div>
-        </div>
 
         {/* Mobile-optimized Tabs */}
         <div className="bg-[#18181B] rounded-lg sm:rounded-xl border border-[#232326] mb-6 sm:mb-8">
           <div className="flex overflow-x-auto border-b border-[#232326] scrollbar-hide">
             {[
               { key: 'profile', label: 'Profile Details', shortLabel: 'Profile', icon: '👤' },
+              { key: 'wishlist', label: 'My Wishlist', shortLabel: 'Wishlist', icon: '❤️' },
               { key: 'notifications', label: 'Notifications', shortLabel: 'Alerts', icon: '🔔' },
-              { key: 'privacy', label: 'Privacy', shortLabel: 'Privacy', icon: '🔒' },
-              { key: 'activity', label: 'Recent Activity', shortLabel: 'Activity', icon: '📊' }
+              { key: 'privacy', label: 'Privacy', shortLabel: 'Privacy', icon: '🔒' }
             ].map(tab => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => {
+                  setActiveTab(tab.key)
+                  // Update URL without page reload
+                  const url = new URL(window.location.href)
+                  url.searchParams.set('tab', tab.key)
+                  window.history.pushState({}, '', url)
+                }}
                 className={`flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 font-medium transition whitespace-nowrap touch-manipulation ${
                   activeTab === tab.key
                     ? 'text-orange-400 border-b-2 border-orange-400'
@@ -299,91 +528,152 @@ export default function ProfilePage() {
           <div className="p-4 sm:p-6">
             {/* Profile Details Tab */}
             {activeTab === 'profile' && (
-              <div className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                  <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-2">Full Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50 text-sm sm:text-base"
-                    />
+              <div className="space-y-6 sm:space-y-8">
+                {/* Professional Profile Display */}
+                {!isEditing ? (
+                  <div className="space-y-6">
+                    {/* Personal Information Section */}
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-bold text-white mb-4 pb-2 border-b border-[#232326]">Personal Information</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="space-y-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-400 uppercase tracking-wide">Full Name</label>
+                          <div className="text-base sm:text-lg text-white font-medium py-2">{formData.name || 'Not provided'}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-400 uppercase tracking-wide">Email Address</label>
+                          <div className="text-base sm:text-lg text-white font-medium py-2">{formData.email || 'Not provided'}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-400 uppercase tracking-wide">Phone Number</label>
+                          <div className="text-base sm:text-lg text-white font-medium py-2">{formData.phone || 'Not provided'}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-400 uppercase tracking-wide">Location</label>
+                          <div className="text-base sm:text-lg text-white font-medium py-2">{formData.location || 'Not provided'}</div>
+                        </div>
+                        {formData.website && (
+                          <div className="space-y-1 md:col-span-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-400 uppercase tracking-wide">Website</label>
+                            <a 
+                              href={formData.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-base sm:text-lg text-orange-400 hover:text-orange-300 font-medium py-2 inline-block transition"
+                            >
+                              {formData.website}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bio Section */}
+                    {formData.bio && (
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-bold text-white mb-4 pb-2 border-b border-[#232326]">About</h3>
+                        <div className="bg-[#232326] rounded-lg p-4 sm:p-6 border border-[#333]">
+                          <p className="text-gray-300 text-sm sm:text-base leading-relaxed whitespace-pre-wrap">{formData.bio}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Edit Button */}
+                    <div className="pt-4">
+                      <Link
+                        href="/profile/edit"
+                        className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition text-sm sm:text-base cursor-pointer select-none"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit Profile
+                      </Link>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-2">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50 text-sm sm:text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-2">Phone</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50 text-sm sm:text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-2">Location</label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50 text-sm sm:text-base"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">Bio</label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    rows={4}
-                    className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50 text-sm sm:text-base resize-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">Website</label>
-                  <input
-                    type="url"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50 text-sm sm:text-base"
-                  />
-                </div>
-                
-                {isEditing && (
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
-                    <button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base"
-                    >
-                      {isSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                    <button
-                      onClick={() => setIsEditing(false)}
-                      className="bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white px-6 py-3 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base"
-                    >
-                      Cancel
-                    </button>
+                ) : (
+                  /* Edit Mode - Form Fields */
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                      <div>
+                        <label className="block text-gray-300 text-sm font-medium mb-2">Full Name</label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 text-sm font-medium mb-2">Email</label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 text-sm font-medium mb-2">Phone</label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 text-sm font-medium mb-2">Location</label>
+                        <input
+                          type="text"
+                          name="location"
+                          value={formData.location}
+                          onChange={handleInputChange}
+                          className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm font-medium mb-2">Bio</label>
+                      <textarea
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base resize-none"
+                        placeholder="Tell us about yourself..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm font-medium mb-2">Website</label>
+                      <input
+                        type="url"
+                        name="website"
+                        value={formData.website}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#232326] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm sm:text-base"
+                        placeholder="https://yourwebsite.com"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base cursor-pointer select-none"
+                      >
+                        {isSaving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white px-6 py-3 rounded-lg font-medium transition touch-manipulation text-sm sm:text-base cursor-pointer select-none"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -463,29 +753,137 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Activity Tab */}
-            {activeTab === 'activity' && (
+            {/* Wishlist Tab */}
+            {activeTab === 'wishlist' && (
               <div className="space-y-4 sm:space-y-6">
-                <h3 className="text-base sm:text-lg font-semibold">Recent Activity</h3>
-                <div className="space-y-3 sm:space-y-4">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-[#232326] rounded-lg hover:bg-[#2a2a2e] transition">
-                      <div className="text-xl sm:text-2xl flex-shrink-0">{getActivityIcon(activity.type)}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-white text-sm sm:text-base truncate">{activity.item}</div>
-                        <div className="text-xs sm:text-sm text-gray-400">{activity.date}</div>
-                      </div>
-                      <div className={`font-bold text-sm sm:text-base flex-shrink-0 ${getActivityColor(activity.type)}`}>
-                        ${activity.amount.toLocaleString()}
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base sm:text-lg font-semibold">My Wishlist</h3>
+                  <span className="text-sm text-gray-400">
+                    {wishlistLoading ? 'Loading...' : `${watchlistItems.length} item${watchlistItems.length !== 1 ? 's' : ''}`}
+                  </span>
                 </div>
+                
+                {wishlistLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full"></div>
+                  </div>
+                ) : watchlistItems.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">💔</div>
+                    <h4 className="text-lg sm:text-xl font-semibold mb-2">Your wishlist is empty</h4>
+                    <p className="text-gray-400 mb-6 text-sm sm:text-base">Start exploring auctions and save your favorites by clicking the wishlist icon.</p>
+                    <Link
+                      href="/auctions"
+                      className="inline-block bg-orange-500 hover:bg-orange-600 px-6 py-3 rounded-lg font-semibold transition text-sm sm:text-base"
+                    >
+                      Discover Auctions
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {watchlistItems.map((item) => {
+                      const auction = item.auction || item
+                      const auctionId = auction._id || auction.id || item.id
+                      const timeLeft = auction.endDate ? new Date(auction.endDate) - new Date() : 0
+                      const isEnded = timeLeft <= 0
+                      
+                      return (
+                        <div
+                          key={auctionId}
+                          className="bg-[#232326] rounded-lg sm:rounded-xl border border-[#333] overflow-hidden hover:border-orange-500/50 transition cursor-pointer group"
+                          onClick={() => router.push(`/auctions/${auctionId}`)}
+                        >
+                          <div className="relative w-full h-40 sm:h-48">
+                            <img
+                              src={auction.imageUrl || auction.images?.[0] || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23333" width="400" height="300"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E'}
+                              alt={auction.title}
+                              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                              onError={(e) => {
+                                if (!e.target.src.includes('data:image')) {
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23333" width="400" height="300"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E'
+                                }
+                              }}
+                            />
+                            <div className="absolute top-2 left-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                isEnded ? 'bg-gray-500 text-white' : 'bg-green-500 text-white'
+                              }`}>
+                                {isEnded ? 'ENDED' : 'LIVE'}
+                              </span>
+                            </div>
+                            <div 
+                              className="absolute top-2 right-2 z-10"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                              }}
+                            >
+                              <WishlistButton 
+                                auction={auction} 
+                                auctionId={auctionId}
+                                size="sm" 
+                              />
+                            </div>
+                          </div>
+                          <div className="p-3 sm:p-4">
+                            <h4 className="font-semibold text-white text-sm sm:text-base mb-2 line-clamp-2 group-hover:text-orange-400 transition">
+                              {auction.title}
+                            </h4>
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <div className="text-orange-400 font-bold text-sm sm:text-lg">
+                                  ${(auction.currentBid || auction.startingPrice || 0).toLocaleString()}
+                                </div>
+                                <div className="text-xs text-gray-400">Current Bid</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xs sm:text-sm text-gray-300 font-medium">
+                                  {auction.bidCount || auction.bids?.length || 0} bids
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {isEnded ? 'Ended' : new Date(auction.endDate).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                router.push(`/auctions/${auctionId}`)
+                              }}
+                              className={`w-full py-2 px-3 rounded-lg font-medium text-sm transition ${
+                                isEnded
+                                  ? 'bg-gray-600 text-gray-300'
+                                  : 'bg-orange-500 hover:bg-orange-600 text-white'
+                              }`}
+                            >
+                              {isEnded ? 'View Results' : 'Place Bid'}
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
+
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
+  )
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#09090B] text-white flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full"></div>
+      </div>
+    }>
+      <ProfilePageContent />
+    </Suspense>
   )
 }

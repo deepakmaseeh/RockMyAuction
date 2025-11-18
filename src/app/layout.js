@@ -26,9 +26,11 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#09090B] text-white`}>
         <RoleProvider>
-          <FormIntegrationSetup />
-          {children}
-          <FloatingChatbot /> {/* ✅ Appears on all pages */}
+          <WishlistProvider>
+            <FormIntegrationSetup />
+            {children}
+            <FloatingChatbot /> {/* ✅ Appears on all pages */}
+          </WishlistProvider>
         </RoleProvider>
       </body>
     </html>

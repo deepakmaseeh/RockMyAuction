@@ -4,30 +4,15 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserRole } from '@/contexts/RoleContext'
 import { sampleData } from '@/lib/formAutoFill'
-
-// Helper function to get or create default user ID
-function getDefaultUserId() {
-  let defaultUserId = localStorage.getItem('default-user-id')
-  if (!defaultUserId) {
-    // Create a default user ID if none exists
-    defaultUserId = 'default-user-' + Date.now()
-    localStorage.setItem('default-user-id', defaultUserId)
-    localStorage.setItem('user-data', JSON.stringify({
-      id: defaultUserId,
-      name: 'Demo User',
-      email: 'demo@example.com'
-    }))
-    localStorage.setItem('auth-token', 'demo-token')
-  }
-  return defaultUserId
-}
+import auctionAPI from '@/lib/auctionAPI'
 
 export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
   const router = useRouter()
-  const { userId, user } = useUserRole()
+  const { userId, user, isAuthenticated } = useUserRole()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [isClient, setIsClient] = useState(false)
 
   // Form state
   const [title, setTitle] = useState('')
@@ -36,6 +21,11 @@ export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
   const [auctionDate, setAuctionDate] = useState('')
   const [location, setLocation] = useState('')
   const [status, setStatus] = useState('draft')
+
+  // Ensure component only renders on client to avoid hydration errors
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // Auto-fill function
   const handleAutoFill = () => {
@@ -84,11 +74,10 @@ export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
   // Load existing catalogue if editing
   useEffect(() => {
     if (catalogueId) {
-      fetch(`/api/catalogues/${catalogueId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.catalogue) {
-            const cat = data.catalogue
+      auctionAPI.getCatalogue(catalogueId)
+        .then(response => {
+          const cat = response.catalogue || response.data || response
+          if (cat) {
             setTitle(cat.title || '')
             setDescription(cat.description || '')
             setCoverImage(cat.coverImage || '')
@@ -111,8 +100,12 @@ export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
     setSuccess('')
 
     try {
-      // Get current user ID from context or create default
-      const currentUserId = userId || getDefaultUserId()
+      // Require authentication
+      if (!isAuthenticated || !userId) {
+        throw new Error('You must be logged in to create a catalogue. Please login first.')
+      }
+      
+      const currentUserId = userId
 
       const catalogueData = {
         title: title.trim(),
@@ -124,30 +117,26 @@ export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
         createdBy: currentUserId
       }
 
-      const url = catalogueId ? `/api/catalogues/${catalogueId}` : '/api/catalogues'
-      const method = catalogueId ? 'PUT' : 'POST'
+      let response
+      if (catalogueId) {
+        response = await auctionAPI.updateCatalogue(catalogueId, catalogueData)
+      } else {
+        response = await auctionAPI.createCatalogue(catalogueData)
+      }
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(catalogueData)
-      })
-
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to save catalogue')
+      const catalogue = response.catalogue || response.data || response
+      
+      if (!catalogue) {
+        throw new Error(response.error || 'Failed to save catalogue')
       }
 
       setSuccess('Catalogue saved successfully!')
       
       if (onSave) {
-        onSave(data.catalogue)
+        onSave(catalogue)
       } else {
         setTimeout(() => {
-          router.push(`/catalogues/${data.catalogue._id}`)
+          router.push(`/catalogues/${catalogue._id || catalogue.id}`)
         }, 1000)
       }
 
@@ -157,6 +146,18 @@ export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // Prevent hydration errors by not rendering until client-side
+  if (!isClient) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-[#18181B] via-[#1f1f23] to-[#232326] rounded-xl border border-orange-500/20 shadow-2xl">
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+          <p className="mt-4 text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

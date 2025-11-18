@@ -1,5 +1,10 @@
 const PRODUCTION_API_URL = 'https://excellwebsolution.com';
-const API_BASE_URL = PRODUCTION_API_URL;
+const DEVELOPMENT_API_URL = 'http://localhost:5000';
+
+// Use localhost in development, production URL otherwise
+const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? DEVELOPMENT_API_URL
+  : PRODUCTION_API_URL;
 
 class AuctionAPI {
   constructor() {
@@ -41,7 +46,11 @@ class AuctionAPI {
       });
 
       if (!response.ok) {
-        await this.handleErrorResponse(response);
+        // Clone response before reading it, in case we need to read it again
+        const responseClone = response.clone();
+        await this.handleErrorResponse(responseClone);
+        // This will throw, so code below won't execute
+        return;
       }
 
       const contentType = response.headers.get('content-type');
@@ -53,45 +62,75 @@ class AuctionAPI {
 
       return await response.text();
     } catch (error) {
-      console.error('❌ API Error:', {
+      const errorDetails = {
         url,
         method: config.method || 'GET',
-        error: error.message,
-      });
+        error: error.message || 'Unknown error',
+        stack: error.stack || 'No stack trace',
+        name: error.name || 'Error',
+      };
+      console.error('❌ API Error:', JSON.stringify(errorDetails, null, 2));
       throw this.createApiError(error);
     }
   }
 
   async handleErrorResponse(response) {
     let errorData;
+    let errorMessage = 'Unknown error';
+    
     try {
-      errorData = await response.json();
-    } catch {
-      errorData = await response.text().catch(() => 'Unknown error');
+      const text = await response.text();
+      try {
+        errorData = JSON.parse(text);
+        // Extract error message from various possible formats
+        errorMessage = errorData.message || errorData.error || errorData.data?.error || errorData.data?.message || text || 'Unknown error';
+      } catch {
+        // Not JSON, use text as error message
+        errorData = text;
+        errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+      }
+    } catch (e) {
+      errorData = null;
+      errorMessage = `HTTP ${response.status}: ${response.statusText}`;
     }
 
-    console.error('🔥 API Error Response:', {
+    const errorLog = {
       status: response.status,
       statusText: response.statusText,
+      url: response.url || 'Unknown URL',
       data: errorData,
-    });
+      message: errorMessage,
+    };
+    
+    // Stringify to ensure proper serialization
+    try {
+      console.error('🔥 API Error Response:', JSON.stringify(errorLog, null, 2));
+    } catch (e) {
+      console.error('🔥 API Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url || 'Unknown URL',
+        message: errorMessage,
+        dataType: typeof errorData,
+      });
+    }
 
     switch (response.status) {
       case 400:
-        throw new Error(errorData.message || errorData.error || 'Bad request. Please check your input.');
+        throw new Error(errorMessage || 'Bad request. Please check your input.');
       case 401:
         this.handleUnauthorized();
-        throw new Error(errorData.message || 'Authentication required. Please login again.');
+        throw new Error(errorMessage || 'Authentication required. Please login again.');
       case 403:
-        throw new Error(errorData.message || 'Access forbidden. You do not have permission.');
+        throw new Error(errorMessage || 'Access forbidden. You do not have permission.');
       case 404:
-        throw new Error(errorData.message || 'API endpoint not found.');
+        throw new Error(errorMessage || 'API endpoint not found.');
       case 422:
-        throw new Error(errorData.message || `Validation error: ${JSON.stringify(errorData)}`);
+        throw new Error(errorMessage || `Validation error: ${JSON.stringify(errorData)}`);
       case 429:
         throw new Error('Too many requests. Please wait a moment and try again.');
       case 500:
-        throw new Error('Server error. Please try again later.');
+        throw new Error(errorMessage || 'Server error. Please try again later.');
       case 502:
         throw new Error('Service temporarily unavailable. Please try again.');
       case 503:
@@ -246,14 +285,21 @@ class AuctionAPI {
   }
 
   async getSeller(sellerId) {
-    return this.request(`/api/users/${sellerId}`, {
+    return this.request(`/api/users?id=${sellerId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getUserById(userId) {
+    return this.request(`/api/users?id=${userId}`, {
       method: 'GET',
     });
   }
 
   // ✅ NEW: WISHLIST METHODS
-  async getWishlist() {
-    return this.request('/api/wishlist', {
+  async getWishlist(checkAuctionId = null) {
+    const queryParam = checkAuctionId ? `?check=${checkAuctionId}` : '';
+    return this.request(`/api/wishlist${queryParam}`, {
       method: 'GET',
     });
   }
@@ -275,7 +321,7 @@ class AuctionAPI {
   }
 
   async isInWishlist(auctionId) {
-    return this.request(`/api/wishlist/check/${auctionId}`, {
+    return this.request(`/api/wishlist?check=${auctionId}`, {
       method: 'GET',
     });
   }
@@ -397,11 +443,205 @@ class AuctionAPI {
     return this.request(`/api/bids/${auctionId}`);
   }
 
+  // Upload endpoints
+  async getUploadUrl(fileName, fileType) {
+    return this.request('/api/s3-upload', {
+      method: 'POST',
+      body: JSON.stringify({ fileName, fileType }),
+    });
+  }
+
+  // Upload file through backend (avoids CORS issues)
+  async uploadFile(fileData) {
+    const { file, fileName, fileType } = fileData;
+    return this.request('/api/s3-upload/upload', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        file, // base64 encoded file
+        fileName, 
+        fileType 
+      }),
+    });
+  }
+
+  // Upload profile photo (saves to profiles/ folder in GCS)
+  async uploadProfilePhoto(fileData) {
+    const { file, fileName, fileType } = fileData;
+    return this.request('/api/s3-upload/upload-profile', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        file, // base64 encoded file
+        fileName, 
+        fileType 
+      }),
+    });
+  }
+
   // AI endpoints
-  async generateAIContent(prompt) {
+  async analyzeImage(imageData) {
+    const { imageKey, imageUrl, formFill, prompt } = imageData;
+    return this.request('/api/analyze-image', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        imageKey, 
+        imageUrl, 
+        formFill: formFill || false,
+        prompt 
+      }),
+    });
+  }
+
+  async generateAIContent(data) {
+    // Supports both old format (string prompt) and new format (object with type, prompt, etc.)
+    const body = typeof data === 'string' 
+      ? { prompt: data }
+      : data;
+    
     return this.request('/api/ai/generate', {
       method: 'POST',
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify(body),
+    });
+  }
+
+  async generateLotDraft(prompt, imageData = null) {
+    const body = {
+      type: 'lotDraft',
+      prompt,
+      ...(imageData && { imageData })
+    };
+    return this.request('/api/ai/generate', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  // Catalogue endpoints
+  async getCatalogues(params = {}) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        queryParams.set(key, value);
+      }
+    });
+    return this.request(`/api/catalogues${queryParams.toString() ? `?${queryParams}` : ''}`, {
+      method: 'GET',
+    });
+  }
+
+  async getCatalogue(id) {
+    return this.request(`/api/catalogues/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async createCatalogue(catalogueData) {
+    return this.request('/api/catalogues', {
+      method: 'POST',
+      body: JSON.stringify(catalogueData),
+    });
+  }
+
+  async updateCatalogue(id, catalogueData) {
+    return this.request(`/api/catalogues/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(catalogueData),
+    });
+  }
+
+  async deleteCatalogue(id) {
+    return this.request(`/api/catalogues/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Lot endpoints
+  async getLots(params = {}) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        queryParams.set(key, value);
+      }
+    });
+    return this.request(`/api/lots${queryParams.toString() ? `?${queryParams}` : ''}`, {
+      method: 'GET',
+    });
+  }
+
+  async getLot(lotId) {
+    return this.request(`/api/lots/${lotId}`, {
+      method: 'GET',
+    });
+  }
+
+  async createLot(lotData) {
+    return this.request('/api/lots', {
+      method: 'POST',
+      body: JSON.stringify(lotData),
+    });
+  }
+
+  async updateLot(lotId, lotData) {
+    return this.request(`/api/lots/${lotId}`, {
+      method: 'PUT',
+      body: JSON.stringify(lotData),
+    });
+  }
+
+  async deleteLot(lotId) {
+    return this.request(`/api/lots/${lotId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin endpoints
+  async getAdminAuctions(params = {}) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        queryParams.set(key, value);
+      }
+    });
+    return this.request(`/api/admin/auctions${queryParams.toString() ? `?${queryParams}` : ''}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAdminAuction(id) {
+    return this.request(`/api/admin/auctions/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAdminAuctionLots(auctionId, params = {}) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        queryParams.set(key, value);
+      }
+    });
+    return this.request(`/api/admin/auctions/${auctionId}/lots${queryParams.toString() ? `?${queryParams}` : ''}`, {
+      method: 'GET',
+    });
+  }
+
+  async bulkLotActions(actions) {
+    return this.request('/api/admin/lots/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ actions }),
+    });
+  }
+
+  async reorderLots(auctionId, lotOrders) {
+    return this.request('/api/admin/lots/reorder', {
+      method: 'PUT',
+      body: JSON.stringify({ auctionId, lotOrders }),
+    });
+  }
+
+  async importLots(auctionId, fileData, format = 'csv') {
+    return this.request('/api/admin/lots/import', {
+      method: 'POST',
+      body: JSON.stringify({ auctionId, fileData, format }),
     });
   }
 
@@ -412,21 +652,57 @@ class AuctionAPI {
     });
   }
 
-  async blockUser(userId) {
-    return this.request(`/api/users/${userId}/block`, {
+  async updateUser(userId, userData) {
+    return this.request(`/api/users/${userId}`, {
       method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async blockUser(userId) {
+    return this.request(`/api/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ action: 'block' }),
+    });
+  }
+
+  async unblockUser(userId) {
+    return this.request(`/api/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ action: 'unblock' }),
     });
   }
 
   async deactivateUser(userId) {
-    return this.request(`/api/users/${userId}/deactivate`, {
+    return this.request(`/api/users/${userId}`, {
       method: 'PUT',
+      body: JSON.stringify({ action: 'deactivate' }),
+    });
+  }
+
+  async activateUser(userId) {
+    return this.request(`/api/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ action: 'activate' }),
     });
   }
 
   async deleteUser(userId) {
     return this.request(`/api/users/${userId}`, {
       method: 'DELETE',
+    });
+  }
+
+  // User data endpoints
+  async getUserBids(userId) {
+    return this.request(`/api/user/bids?userId=${userId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getSellerAnalytics(userId) {
+    return this.request(`/api/seller/analytics?userId=${userId}`, {
+      method: 'GET',
     });
   }
 }

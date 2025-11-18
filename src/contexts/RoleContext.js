@@ -26,24 +26,28 @@ export function RoleProvider({ children }) {
         })
 
         if (token && storedUser) {
+          // Only restore user if we have a valid token (not demo-token)
           const userData = JSON.parse(storedUser)
-          setUser(userData)
-          setIsAuthenticated(true)
-          console.log('🔄 User restored from localStorage:', userData)
-        } else {
-          // ✅ AUTO-CREATE DEMO USER FOR TESTING (no login required)
-          const defaultUserId = 'demo-user-' + Date.now()
-          const demoUser = {
-            id: defaultUserId,
-            name: 'Demo User',
-            email: 'demo@example.com'
+          
+          // Don't restore demo users - require actual login
+          if (token !== 'demo-token' && userData.name !== 'Demo User') {
+            setUser(userData)
+            setIsAuthenticated(true)
+            console.log('🔄 User restored from localStorage:', userData)
+          } else {
+            // Clear demo user data
+            localStorage.removeItem('auth-token')
+            localStorage.removeItem('user-data')
+            localStorage.removeItem('default-user-id')
+            setUser(null)
+            setIsAuthenticated(false)
+            console.log('🧹 Demo user data cleared - please login')
           }
-          localStorage.setItem('default-user-id', defaultUserId)
-          localStorage.setItem('user-data', JSON.stringify(demoUser))
-          localStorage.setItem('auth-token', 'demo-token')
-          setUser(demoUser)
-          setIsAuthenticated(true)
-          console.log('✅ Demo user auto-created for testing:', demoUser)
+        } else {
+          // No valid auth - user needs to login
+          setUser(null)
+          setIsAuthenticated(false)
+          console.log('🔒 No authenticated user - please login')
         }
 
         if (savedRole && (savedRole === 'buyer' || savedRole === 'seller')) {
@@ -51,18 +55,9 @@ export function RoleProvider({ children }) {
         }
       } catch (error) {
         console.error('Error checking auth state:', error)
-        // Create demo user even on error
-        const defaultUserId = 'demo-user-' + Date.now()
-        const demoUser = {
-          id: defaultUserId,
-          name: 'Demo User',
-          email: 'demo@example.com'
-        }
-        localStorage.setItem('default-user-id', defaultUserId)
-        localStorage.setItem('user-data', JSON.stringify(demoUser))
-        localStorage.setItem('auth-token', 'demo-token')
-        setUser(demoUser)
-        setIsAuthenticated(true)
+        // Don't create demo user on error - require login
+        setUser(null)
+        setIsAuthenticated(false)
       } finally {
         setLoading(false) // ✅ FIXED: Set loading to false after check
       }

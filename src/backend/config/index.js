@@ -32,14 +32,6 @@ export const config = {
     apiKey: process.env.GEMINI_API_KEY || ''
   },
   
-  // AWS S3 Configuration (if using)
-  aws: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    region: process.env.AWS_REGION || 'us-east-1',
-    s3Bucket: process.env.AWS_S3_BUCKET || ''
-  },
-  
   // API Configuration
   api: {
     baseUrl: process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',

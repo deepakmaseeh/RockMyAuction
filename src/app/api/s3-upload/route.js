@@ -1,74 +1,56 @@
-// import { NextResponse } from 'next/server'
-// import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-// import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-// import { v4 as uuidv4 } from 'uuid'
-
-// const s3Client = new S3Client({
-//   region: process.env.AWS_REGION || 'us-east-1',
-//   credentials: {
-//     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-//     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-//   },
-// })
-
-// export async function POST(request) {
-//   try {
-//     const { fileName, fileType } = await request.json()
-    
-//     const fileExtension = fileName.split('.').pop()
-//     const key = `auctions/${uuidv4()}.${fileExtension}`
-    
-//     const command = new PutObjectCommand({
-//       Bucket: process.env.AWS_S3_BUCKET_NAME,
-//       Key: key,
-//       ContentType: fileType,
-//     })
-    
-//     const url = await getSignedUrl(s3Client, command, { expiresIn: 300 }) // 5 minutes
-    
-//     const fileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`
-    
-//     return NextResponse.json({ url, key, fileUrl })
-//   } catch (error) {
-//     console.error('S3 upload error:', error)
-//     return NextResponse.json({ error: 'Failed to generate upload URL' }, { status: 500 })
-//   }
-// }
-
 import { NextResponse } from 'next/server'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { Storage } from '@google-cloud/storage'
 import { v4 as uuidv4 } from 'uuid'
 
-// Validate environment variables
-const requiredEnvVars = {
-  AWS_REGION: process.env.AWS_REGION,
-  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-  AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME,
+// Initialize Google Cloud Storage client
+let storage = null
+let bucket = null
+
+try {
+  // Validate environment variables
+  const requiredEnvVars = {
+    GCLOUD_PROJECT: process.env.GCLOUD_PROJECT,
+    GCLOUD_BUCKET: process.env.GCLOUD_BUCKET,
+    GCLOUD_CLIENT_EMAIL: process.env.GCLOUD_CLIENT_EMAIL,
+    GCLOUD_PRIVATE_KEY: process.env.GCLOUD_PRIVATE_KEY,
+  }
+
+  const missingVars = Object.entries(requiredEnvVars)
+    .filter(([key, value]) => !value)
+    .map(([key]) => key)
+
+  if (missingVars.length > 0) {
+    console.error('❌ Missing required Google Cloud environment variables:', missingVars)
+  } else {
+    // Initialize Storage client with service account credentials
+    // Handle private key - it may be provided with or without newline escapes
+    let privateKey = requiredEnvVars.GCLOUD_PRIVATE_KEY
+    // If it doesn't start with BEGIN, it might be just the key without markers
+    // Otherwise, replace escaped newlines
+    if (privateKey.includes('BEGIN')) {
+      privateKey = privateKey.replace(/\\n/g, '\n')
+    }
+    
+    storage = new Storage({
+      projectId: requiredEnvVars.GCLOUD_PROJECT,
+      credentials: {
+        client_email: requiredEnvVars.GCLOUD_CLIENT_EMAIL,
+        private_key: privateKey,
+      },
+    })
+
+    bucket = storage.bucket(requiredEnvVars.GCLOUD_BUCKET)
+    console.log('✅ Google Cloud Storage initialized successfully')
+  }
+} catch (error) {
+  console.error('❌ Failed to initialize Google Cloud Storage:', error)
 }
-
-const missingVars = Object.entries(requiredEnvVars)
-  .filter(([key, value]) => !value)
-  .map(([key]) => key)
-
-if (missingVars.length > 0) {
-  console.error('❌ Missing required environment variables:', missingVars)
-}
-
-const s3Client = missingVars.length === 0 ? new S3Client({
-  region: requiredEnvVars.AWS_REGION,
-  credentials: {
-    accessKeyId: requiredEnvVars.AWS_ACCESS_KEY_ID,
-    secretAccessKey: requiredEnvVars.AWS_SECRET_ACCESS_KEY,
-  },
-}) : null
 
 export async function POST(request) {
   try {
-    if (!s3Client) {
+    if (!storage || !bucket) {
       return NextResponse.json({ 
-        error: `Server misconfigured. Missing env vars: ${missingVars.join(', ')}` 
+        error: 'Server misconfigured. Google Cloud Storage not initialized. Check GCLOUD_* environment variables.' 
       }, { status: 500 })
     }
 
@@ -85,24 +67,28 @@ export async function POST(request) {
     const fileExtension = fileName.split('.').pop() || 'jpg'
     const key = `auctions/${uuidv4()}.${fileExtension}`
     
-    const command = new PutObjectCommand({
-      Bucket: requiredEnvVars.AWS_S3_BUCKET_NAME,
-      Key: key,
-      ContentType: fileType,
+    // Get a reference to the file
+    const file = bucket.file(key)
+    
+    // Generate a signed URL for uploading
+    // Options: expires in 5 minutes, allows PUT method
+    const [url] = await file.getSignedUrl({
+      version: 'v4',
+      action: 'write',
+      expires: Date.now() + 5 * 60 * 1000, // 5 minutes
+      contentType: fileType,
     })
     
-    const url = await getSignedUrl(s3Client, command, { expiresIn: 300 }) // 5 minutes
-    
-    const fileUrl = `https://${requiredEnvVars.AWS_S3_BUCKET_NAME}.s3.${requiredEnvVars.AWS_REGION}.amazonaws.com/${key}`
+    // Generate the public URL (assuming bucket is configured for public access)
+    const fileUrl = `https://storage.googleapis.com/${process.env.GCLOUD_BUCKET}/${key}`
     
     console.log('✅ Generated URLs:', { key, fileUrl })
     
     return NextResponse.json({ url, key, fileUrl })
   } catch (error) {
-    console.error('❌ S3 upload error:', error)
+    console.error('❌ Google Cloud Storage upload error:', error)
     return NextResponse.json({ 
       error: `Failed to generate upload URL: ${error.message}` 
     }, { status: 500 })
   }
 }
- 

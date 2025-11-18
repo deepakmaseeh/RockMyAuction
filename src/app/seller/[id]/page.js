@@ -58,7 +58,8 @@ export default function SellerProfilePage() {
 
         // Fetch seller's auctions
         const auctionsData = await auctionAPI.getAuctions({ seller: sellerId })
-        const auctionsList = Array.isArray(auctionsData) ? auctionsData : auctionsData.auctions || []
+        // Handle both array format and object with data property (backend returns {success: true, data: [...], pagination: {...}})
+        const auctionsList = Array.isArray(auctionsData) ? auctionsData : (auctionsData.data || auctionsData.auctions || [])
         setSellerAuctions(auctionsList)
 
       } catch (err) {

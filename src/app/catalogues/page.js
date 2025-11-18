@@ -8,21 +8,24 @@ import auctionAPI from '@/lib/auctionAPI'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
-// Helper function to get or create default user ID
-function getDefaultUserId() {
-  let defaultUserId = localStorage.getItem('default-user-id')
-  if (!defaultUserId) {
-    // Create a default user ID if none exists
-    defaultUserId = 'default-user-' + Date.now()
-    localStorage.setItem('default-user-id', defaultUserId)
-    localStorage.setItem('user-data', JSON.stringify({
-      id: defaultUserId,
-      name: 'Demo User',
-      email: 'demo@example.com'
-    }))
-    localStorage.setItem('auth-token', 'demo-token')
+// Helper function to get user ID - requires actual authentication
+function getUserId() {
+  const token = localStorage.getItem('auth-token')
+  const userData = localStorage.getItem('user-data')
+  
+  // Only return user ID if authenticated (not demo)
+  if (token && token !== 'demo-token' && userData) {
+    try {
+      const user = JSON.parse(userData)
+      if (user.name !== 'Demo User') {
+        return user.id
+      }
+    } catch (e) {
+      // Invalid user data
+    }
   }
-  return defaultUserId
+  
+  return null // User must login
 }
 
 export default function CataloguesPage() {
@@ -36,19 +39,14 @@ export default function CataloguesPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('catalogues') // 'catalogues' or 'auctions'
 
-  // Auto-login with default user if not authenticated
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      const defaultUserId = getDefaultUserId()
-      const userData = JSON.parse(localStorage.getItem('user-data') || '{}')
-      
-      login({
-        id: defaultUserId,
-        name: userData.name || 'Demo User',
-        email: userData.email || 'demo@example.com'
-      })
+      // Don't auto-login - user must authenticate
+      // Optionally redirect to login page
+      // router.push('/login')
     }
-  }, [isAuthenticated, login])
+  }, [isAuthenticated])
 
   useEffect(() => {
     loadCatalogues()
@@ -61,15 +59,16 @@ export default function CataloguesPage() {
   const loadCatalogues = async () => {
     try {
       setLoading(true)
-      const url = statusFilter === 'all' 
-        ? '/api/catalogues' 
-        : `/api/catalogues?status=${statusFilter}`
+      const params = statusFilter === 'all' ? {} : { status: statusFilter }
+      const response = await auctionAPI.getCatalogues(params)
       
-      const response = await fetch(url)
-      const data = await response.json()
-      
-      if (data.success) {
-        setCatalogues(data.catalogues || [])
+      // Handle different response formats
+      if (response.success && response.catalogues) {
+        setCatalogues(response.catalogues || [])
+      } else if (response.data && Array.isArray(response.data)) {
+        setCatalogues(response.data)
+      } else if (Array.isArray(response)) {
+        setCatalogues(response)
       } else {
         setError('Failed to load catalogues')
       }
@@ -85,7 +84,8 @@ export default function CataloguesPage() {
     try {
       setAuctionsLoading(true)
       const data = await auctionAPI.getAuctions()
-      const auctionsList = Array.isArray(data) ? data : data.auctions || []
+      // Handle both array format and object with data property (backend returns {success: true, data: [...], pagination: {...}})
+      const auctionsList = Array.isArray(data) ? data : (data.data || data.auctions || [])
       
       // Filter only active auctions (not ended)
       const now = new Date()
@@ -108,16 +108,8 @@ export default function CataloguesPage() {
     }
 
     try {
-      const response = await fetch(`/api/catalogues/${id}`, {
-        method: 'DELETE'
-      })
-      const data = await response.json()
-      
-      if (data.success) {
-        loadCatalogues()
-      } else {
-        alert('Failed to delete catalogue')
-      }
+      await auctionAPI.deleteCatalogue(id)
+      loadCatalogues()
     } catch (err) {
       console.error('Error deleting catalogue:', err)
       alert('Failed to delete catalogue')

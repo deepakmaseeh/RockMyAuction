@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import Navbar from '@/components/Navbar'
+import WishlistButton from '@/components/WishlistButton'
 import auctionAPI from '@/lib/auctionAPI'
 
 // Mock featured auction (keep as fallback)
@@ -28,11 +29,18 @@ function AuctionCard({ auction }) {
   const isUrgent = timeLeft.includes('h') && parseInt(timeLeft) < 2
 
   const getSeller = () => {
-    return auction.seller?.name || auction.sellerName || 'Unknown Seller'
+    // Try seller first, then createdBy, then fallback
+    return auction.seller?.name || auction.createdBy?.name || auction.sellerName || 'Unknown Seller'
+  }
+
+  const getSellerAvatar = () => {
+    // Try seller first, then createdBy
+    return auction.seller?.avatar || auction.createdBy?.avatar || null
   }
 
   const getSellerInitial = () => {
     const sellerName = getSeller()
+    if (!sellerName || sellerName === 'Unknown Seller') return '?'
     return sellerName.charAt(0).toUpperCase()
   }
 
@@ -41,10 +49,32 @@ function AuctionCard({ auction }) {
       {/* Status Badge */}
       <div className="relative">
         <img
-          src={auction.imageUrl || auction.images?.[0] || auction.image || '/placeholder-auction.svg'}
+          src={auction.imageUrl || auction.images?.[0] || auction.image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23333" width="400" height="300"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E'}
           alt={auction.title}
-          className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-800"
           loading="lazy"
+          onError={(e) => {
+            const failedSrc = e.target.src
+            // Prevent infinite loop if fallback also fails
+            if (!failedSrc.includes('data:image') && !failedSrc.includes('placeholder')) {
+              // Log error details if available
+              try {
+                const errorDetails = {
+                  src: failedSrc,
+                  auctionId: auction?._id || auction?.id || 'unknown',
+                  title: auction?.title || 'unknown',
+                  imageUrl: auction?.imageUrl || 'none',
+                  images: auction?.images || []
+                }
+                console.error('❌ Image failed to load:', errorDetails)
+              } catch (err) {
+                console.error('❌ Image failed to load:', { src: failedSrc })
+              }
+              // Use inline SVG placeholder as fallback
+              e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23333" width="400" height="300"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E'
+              e.target.onerror = null // Prevent infinite loop
+            }
+          }}
         />
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
           <span className={`px-2 py-1 rounded-full text-xs font-bold ${
@@ -55,8 +85,10 @@ function AuctionCard({ auction }) {
             {isEnded ? 'ENDED' : 'LIVE NOW'}
           </span>
         </div>
-        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
-          {auction.bidCount || auction.bids?.length || 0} bids
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 z-10">
+          <div className="bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
+            {auction.bidCount || auction.bids?.length || 0} bids
+          </div>
         </div>
       </div>
 
@@ -83,10 +115,31 @@ function AuctionCard({ auction }) {
 
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              {getSellerInitial()}
-            </div>
-            <span className="text-xs sm:text-sm text-gray-400 truncate">{getSeller()}</span>
+            {getSellerAvatar() ? (
+              <div className="relative w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0">
+                <img
+                  src={getSellerAvatar()}
+                  alt={getSeller()}
+                  className="w-full h-full rounded-full object-cover border border-orange-500/30"
+                  onError={(e) => {
+                    // Hide image and show initial fallback
+                    e.target.style.display = 'none'
+                    const fallback = e.target.parentElement.querySelector('.avatar-fallback')
+                    if (fallback) fallback.style.display = 'flex'
+                  }}
+                />
+                <div 
+                  className="avatar-fallback w-full h-full bg-orange-500 rounded-full items-center justify-center text-white text-xs font-bold hidden"
+                >
+                  {getSellerInitial()}
+                </div>
+              </div>
+            ) : (
+              <div className="w-6 h-6 sm:w-7 sm:h-7 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                {getSellerInitial()}
+              </div>
+            )}
+            <span className="text-xs sm:text-sm text-gray-300 truncate font-medium">{getSeller()}</span>
           </div>
           <span className="text-xs bg-[#232326] text-gray-300 px-2 py-1 rounded flex-shrink-0">
             {auction.category || 'General'}
@@ -105,11 +158,11 @@ function AuctionCard({ auction }) {
           >
             {isEnded ? 'View Results' : 'Place Bid'}
           </button>
-          <button className="p-2 bg-[#232326] hover:bg-[#2a2a2e] active:bg-[#323238] text-gray-300 rounded-lg transition touch-manipulation">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          </button>
+          <WishlistButton 
+            auction={auction} 
+            auctionId={auction._id || auction.id}
+            size="sm" 
+          />
         </div>
       </div>
     </div>
@@ -242,8 +295,16 @@ export default function AuctionsPage() {
         const data = await auctionAPI.getAuctions()
         console.log('✅ Auctions data received:', data)
         
-        // Handle both array format and object with auctions property
-        const auctionsList = Array.isArray(data) ? data : data.auctions || []
+        // Handle both array format and object with data property (backend returns {success: true, data: [...], pagination: {...}})
+        const auctionsList = Array.isArray(data) ? data : (data.data || data.auctions || [])
+        
+        // Debug: Log image URLs to check if they're present
+        console.log('🖼️  Image URLs check:', auctionsList.map(a => ({
+          title: a.title,
+          imageUrl: a.imageUrl,
+          images: a.images,
+          hasImage: !!(a.imageUrl || a.images?.[0])
+        })))
         
         // ✅ Set all auctions (both live and ended)
         setAllAuctions(auctionsList)

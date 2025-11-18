@@ -53,9 +53,17 @@ export default function AddNewAuctionForm() {
 
   // ✅ NEW: Mobile detection state
   const [isMobile, setIsMobile] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
-  // ✅ NEW: Detect if device supports camera
+  // ✅ Mark component as client-mounted to prevent hydration issues
   useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // ✅ NEW: Detect if device supports camera (client-side only)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     const checkMobile = () => {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera
       const isMobileDevice = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
@@ -64,8 +72,10 @@ export default function AddNewAuctionForm() {
     checkMobile()
   }, [])
 
-  // Set default times when component loads
+  // Set default times when component loads (client-side only to prevent hydration issues)
   useEffect(() => {
+    if (typeof window === 'undefined' || !isClient) return
+    
     const now = new Date()
     const defaultStart = new Date(now.getTime() + 60 * 60 * 1000) // 1 hour from now
     const defaultEnd = new Date(defaultStart.getTime() + 24 * 60 * 60 * 1000) // 24 hours later
@@ -85,7 +95,7 @@ export default function AddNewAuctionForm() {
     if (!endTime) {
       setEndTime(formatDateTime(defaultEnd))
     }
-  }, [])
+  }, [isClient, startTime, endTime])
 
   // ✅ Listen for chatbot form fill events
   useEffect(() => {
@@ -173,70 +183,48 @@ export default function AddNewAuctionForm() {
       try {
         console.log('🚀 Starting image upload and AI analysis...')
 
-        // 1. Get pre-signed URL from S3 upload API
-        console.log('📤 Getting presigned URL...')
-        const presignedResponse = await fetch('/api/s3-upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            fileName: file.name, 
-            fileType: file.type 
-          }),
+        // 1. Convert file to base64 for backend upload (avoids CORS issues)
+        console.log('📤 Converting image to base64...')
+        const base64File = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            // Remove data:image/jpeg;base64, prefix
+            const base64 = reader.result.split(',')[1]
+            resolve(base64)
+          }
+          reader.onerror = reject
+          reader.readAsDataURL(file)
         })
 
-        if (!presignedResponse.ok) {
-          const errorText = await presignedResponse.text()
-          console.error('❌ Presigned URL error:', errorText)
-          throw new Error(`Failed to get upload URL: ${errorText}`)
+        console.log('📤 Uploading to Google Cloud Storage via backend...')
+        
+        // 2. Upload image through backend (avoids CORS issues)
+        const uploadData = await auctionAPI.uploadFile({
+          file: base64File,
+          fileName: file.name,
+          fileType: file.type
+        })
+        
+        if (!uploadData || !uploadData.fileUrl) {
+          throw new Error(uploadData?.error || 'Invalid response from upload service')
         }
 
-        const { url, key, fileUrl } = await presignedResponse.json()
+        const { key, fileUrl } = uploadData
 
-        if (!url || !fileUrl) {
+        if (!fileUrl) {
           throw new Error('Invalid response from upload service')
         }
 
-        console.log('📤 Uploading to S3:', { key, fileUrl })
-
-        // 2. Upload image directly to S3
-        const uploadResponse = await fetch(url, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type,
-          },
-        })
-
-        if (!uploadResponse.ok) {
-          throw new Error(`Failed to upload image to S3: ${uploadResponse.status} ${uploadResponse.statusText}`)
-        }
-
-        // Store the S3 URL for database storage
+        // Store the Google Cloud Storage URL for database storage
         setImageUrl(fileUrl)
-        console.log('✅ Image uploaded successfully:', fileUrl)
+        console.log('✅ Image uploaded successfully to Google Cloud Storage:', fileUrl)
 
         // 3. Call AI analysis with the uploaded image
         console.log('🤖 Starting AI analysis...')
-        const analysisResponse = await fetch('/api/analyze-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            imageKey: key, 
-            imageUrl: fileUrl 
-          }),
+        const result = await auctionAPI.analyzeImage({
+          imageKey: key,
+          imageUrl: fileUrl
         })
-
-        if (!analysisResponse.ok) {
-          const errorText = await analysisResponse.text()
-          console.error('❌ AI API Error Response:', errorText)
-          throw new Error(`AI analysis failed: ${errorText}`)
-        }
-
-        const result = await analysisResponse.json()
         
         if (result.success && result.analysis) {
           const analysis = result.analysis
@@ -263,8 +251,31 @@ export default function AddNewAuctionForm() {
         }
 
       } catch (err) {
-        console.error('❌ Upload/Analysis error:', err)
-        setAnalysisError(`Failed to process image: ${err.message || 'Please try again.'}`)
+        // Better error logging
+        const errorDetails = {
+          message: err.message || 'Unknown error',
+          name: err.name || 'Error',
+          stack: err.stack || 'No stack trace',
+          response: err.response ? {
+            status: err.response.status,
+            statusText: err.response.statusText,
+            data: err.response.data
+          } : undefined,
+        };
+        console.error('❌ Upload/Analysis error:', JSON.stringify(errorDetails, null, 2));
+        console.error('❌ Original error object:', err);
+        
+        // Extract error message from various formats
+        let errorMessage = err.message || 'Please try again.';
+        if (err.response?.data?.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        } else if (typeof err.response?.data === 'string') {
+          errorMessage = err.response.data;
+        }
+        
+        setAnalysisError(`Failed to process image: ${errorMessage}`)
       } finally {
         setIsAnalyzing(false)
       }
@@ -404,44 +415,39 @@ export default function AddNewAuctionForm() {
       console.log('🚀 Validating form...')
       validateForm()
 
-      // ✅ Compress image before sending
-      let imageToSend = image
-      if (image && image.size > 1024 * 1024) { // If larger than 1MB
-        console.log('📦 Compressing image...')
-        imageToSend = await compressImage(image, 800, 0.7)
-        console.log(`📦 Compressed from ${(image.size / 1024 / 1024).toFixed(2)}MB to ${(imageToSend.size / 1024 / 1024).toFixed(2)}MB`)
+      // Prepare auction data as JSON (image already uploaded to GCS)
+      const auctionData = {
+        title: title.trim(),
+        description: description.trim(),
+        startingPrice: parseFloat(startingBid),
+        endDate: new Date(endTime).toISOString(),
+        category: category,
+        imageUrl: imageUrl || '', // Use the GCS URL from image upload
+        images: imageUrl ? [imageUrl] : [], // Backend expects images array
       }
-
-      // Create FormData to send image file + auction data
-      const formData = new FormData()
-      
-      // Add all the auction fields
-      formData.append('title', title.trim())
-      formData.append('description', description.trim())
-      formData.append('startingPrice', parseFloat(startingBid))
-      formData.append('endDate', new Date(endTime).toISOString())
-      formData.append('category', category)
       
       // Add optional fields if they have values
       if (startTime) {
-        formData.append('startDate', new Date(startTime).toISOString())
+        auctionData.startDate = new Date(startTime).toISOString()
       }
       if (quantity) {
-        formData.append('quantity', parseInt(quantity) || 1)
+        auctionData.quantity = parseInt(quantity) || 1
       }
       if (reservePrice) {
-        formData.append('reservePrice', parseFloat(reservePrice))
+        auctionData.reservePrice = parseFloat(reservePrice)
       }
-      
-      // Add the compressed image file
-      if (imageToSend) {
-        formData.append('image', imageToSend, 'image.jpg')
+      // Get condition from AI suggestions if available
+      if (aiSuggestions?.condition) {
+        auctionData.condition = aiSuggestions.condition
       }
 
-      console.log('📤 Creating auction with compressed FormData...')
+      console.log('📤 Creating auction with data:', {
+        ...auctionData,
+        imageUrl: imageUrl ? '✅ Image URL set' : '❌ No image URL'
+      })
 
-      // ✅ Use auctionAPI instead of direct fetch to handle CORS
-      const response = await auctionAPI.createAuctionWithImage(formData)
+      // ✅ Use auctionAPI to create auction (sends JSON, not FormData)
+      const response = await auctionAPI.createAuction(auctionData)
       
       console.log('✅ Auction created successfully:', response)
 
@@ -565,7 +571,7 @@ export default function AddNewAuctionForm() {
               ) : preview ? (
                 <div className="bg-[#232326] rounded-lg p-4 text-center">
                   <img src={preview} alt="Preview" className="max-h-48 rounded mx-auto mb-2" />
-                  <span className="text-xs text-green-400">✅ Image uploaded to S3</span>
+                  <span className="text-xs text-green-400">✅ Image uploaded to Google Cloud Storage</span>
                 </div>
               ) : (
                 <div className="bg-[#232326] rounded-lg border-2 border-dashed border-gray-500 p-8 text-center text-gray-500">
@@ -607,7 +613,7 @@ export default function AddNewAuctionForm() {
               ) : preview ? (
                 <div className="flex flex-col items-center">
                   <img src={preview} alt="Preview" className="max-h-52 rounded mb-2" />
-                  <span className="text-xs text-green-400">✅ Image uploaded to S3</span>
+                  <span className="text-xs text-green-400">✅ Image uploaded to Google Cloud Storage</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center text-gray-500">
@@ -799,7 +805,7 @@ export default function AddNewAuctionForm() {
               />
               {startTime && endTime && (
                 <div className="text-xs text-gray-400 mt-1">
-                  Duration: {Math.round((new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60))} hours
+                  Duration: {isClient && startTime && endTime ? Math.round((new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60)) : 0} hours
                 </div>
               )}
             </div>

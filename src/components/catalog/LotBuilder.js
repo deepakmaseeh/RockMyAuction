@@ -4,23 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserRole } from '@/contexts/RoleContext'
 import { sampleData } from '@/lib/formAutoFill'
-
-// Helper function to get or create default user ID
-function getDefaultUserId() {
-  let defaultUserId = localStorage.getItem('default-user-id')
-  if (!defaultUserId) {
-    // Create a default user ID if none exists
-    defaultUserId = 'default-user-' + Date.now()
-    localStorage.setItem('default-user-id', defaultUserId)
-    localStorage.setItem('user-data', JSON.stringify({
-      id: defaultUserId,
-      name: 'Demo User',
-      email: 'demo@example.com'
-    }))
-    localStorage.setItem('auth-token', 'demo-token')
-  }
-  return defaultUserId
-}
+import auctionAPI from '@/lib/auctionAPI'
 
 const categories = [
   "Electronics",
@@ -50,7 +34,7 @@ const conditions = [
 
 export default function LotBuilder({ lotId, catalogueId, onSave, onCancel }) {
   const router = useRouter()
-  const { userId, user } = useUserRole()
+  const { userId, user, isAuthenticated } = useUserRole()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -81,27 +65,67 @@ export default function LotBuilder({ lotId, catalogueId, onSave, onCancel }) {
 
   // Load catalogues
   useEffect(() => {
-    fetch('/api/catalogues')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.catalogues) {
-          setCatalogues(data.catalogues)
-          if (catalogueId && !selectedCatalogue) {
-            setSelectedCatalogue(catalogueId)
-          }
+    auctionAPI.getCatalogues()
+      .then(response => {
+        const catalogues = response.catalogues || response.data || (Array.isArray(response) ? response : [])
+        setCatalogues(catalogues)
+        if (catalogueId && !selectedCatalogue) {
+          setSelectedCatalogue(catalogueId)
         }
       })
       .catch(err => console.error('Error loading catalogues:', err))
   }, [catalogueId, selectedCatalogue])
 
+  // Auto-generate next lot number when catalogue is selected and not editing
+  useEffect(() => {
+    if (selectedCatalogue && !lotId) {
+      // Load existing lots for this catalogue to suggest next lot number
+      auctionAPI.getLots({ catalogue: selectedCatalogue })
+        .then(response => {
+          const lots = response.lots || response.data || (Array.isArray(response) ? response : [])
+          
+          if (lots.length > 0) {
+            // Find the highest lot number
+            const lotNumbers = lots
+              .map(lot => lot.lotNumber)
+              .filter(num => num)
+              .map(num => {
+                // Extract numeric part from lot number
+                const match = num.toString().match(/\d+/)
+                return match ? parseInt(match[0], 10) : 0
+              })
+              .filter(num => !isNaN(num))
+            
+            if (lotNumbers.length > 0) {
+              const maxNumber = Math.max(...lotNumbers)
+              const nextNumber = maxNumber + 1
+              // Format with leading zeros (3 digits: 001, 002, etc.)
+              const nextLotNumber = String(nextNumber).padStart(3, '0')
+              setLotNumber(nextLotNumber)
+            } else {
+              // No valid lot numbers found, start with 001
+              setLotNumber('001')
+            }
+          } else {
+            // No lots exist, start with 001
+            setLotNumber('001')
+          }
+        })
+        .catch(err => {
+          console.error('Error loading lots for lot number suggestion:', err)
+          // Default to 001 if there's an error
+          setLotNumber('001')
+        })
+    }
+  }, [selectedCatalogue, lotId])
+
   // Load existing lot if editing
   useEffect(() => {
     if (lotId) {
-      fetch(`/api/lots/${lotId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.lot) {
-            const lot = data.lot
+      auctionAPI.getLot(lotId)
+        .then(response => {
+          const lot = response.lot || response.data || response
+          if (lot) {
             setLotNumber(lot.lotNumber || '')
             setTitle(lot.title || '')
             setDescription(lot.description || '')
@@ -145,7 +169,7 @@ export default function LotBuilder({ lotId, catalogueId, onSave, onCancel }) {
   // Auto-fill function
   const handleAutoFill = () => {
     const sample = sampleData.lot
-    setLotNumber(sample.lotNumber)
+    // Don't set lot number - it's auto-generated
     setTitle(sample.title)
     setDescription(sample.description)
     setImages(sample.images || [])
@@ -171,7 +195,7 @@ export default function LotBuilder({ lotId, catalogueId, onSave, onCancel }) {
   useEffect(() => {
     const handleFillForm = (event) => {
       const data = event.detail
-      if (data.lotNumber) setLotNumber(data.lotNumber)
+      // Don't set lot number - it's auto-generated
       if (data.title) setTitle(data.title)
       if (data.description) setDescription(data.description)
       if (data.images && Array.isArray(data.images)) {
@@ -249,13 +273,19 @@ export default function LotBuilder({ lotId, catalogueId, onSave, onCancel }) {
         throw new Error('Please select a catalogue')
       }
 
-      const currentUserId = userId || getDefaultUserId()
+      // Require authentication
+      if (!isAuthenticated || !userId) {
+        throw new Error('You must be logged in to create a lot. Please login first.')
+      }
+      
+      const currentUserId = userId
 
       const lotData = {
-        lotNumber: lotNumber.trim(),
+        // Don't send lotNumber - backend always auto-generates it sequentially
         title: title.trim(),
         description: description.trim(),
-        images,
+        images: images || [],
+        imageUrl: imageUrl || '',
         category,
         condition,
         estimatedValue: parseFloat(estimatedValue) || 0,
@@ -281,27 +311,23 @@ export default function LotBuilder({ lotId, catalogueId, onSave, onCancel }) {
         }
       }
 
-      const url = lotId ? `/api/lots/${lotId}` : '/api/lots'
-      const method = lotId ? 'PUT' : 'POST'
+      let response
+      if (lotId) {
+        response = await auctionAPI.updateLot(lotId, lotData)
+      } else {
+        response = await auctionAPI.createLot(lotData)
+      }
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(lotData)
-      })
-
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to save lot')
+      const lot = response.lot || response.data || response
+      
+      if (!lot) {
+        throw new Error(response.error || 'Failed to save lot')
       }
 
       setSuccess('Lot saved successfully!')
       
       if (onSave) {
-        onSave(data.lot)
+        onSave(lot)
       } else {
         setTimeout(() => {
           router.push(`/catalogues/${selectedCatalogue}`)
@@ -378,15 +404,19 @@ export default function LotBuilder({ lotId, catalogueId, onSave, onCancel }) {
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Lot Number *
+              <span className="text-xs text-gray-400 ml-2">(Auto-generated)</span>
             </label>
             <input
               type="text"
-              value={lotNumber}
-              onChange={(e) => setLotNumber(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-[#1f1f23] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-              placeholder="e.g., 001, 002"
+              value={lotNumber || 'Loading...'}
+              readOnly
+              disabled
+              className="w-full px-4 py-3 bg-[#1f1f23] border border-gray-700 rounded-lg text-gray-400 cursor-not-allowed opacity-60"
+              placeholder="Auto-generated sequentially"
             />
+            {!selectedCatalogue && (
+              <p className="text-xs text-gray-500 mt-1">Select a catalogue to auto-generate lot number</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">

@@ -80,7 +80,7 @@ export async function POST(request) {
       
       return NextResponse.json({ 
         success: false, 
-        error: `Failed to fetch image: ${fetchError.message}. Make sure the S3 bucket is publicly readable.` 
+        error: `Failed to fetch image: ${fetchError.message}. Make sure the Google Cloud Storage bucket is publicly readable.` 
       }, { status: 400 })
     }
 
@@ -88,7 +88,7 @@ export async function POST(request) {
       console.error('❌ Image fetch failed:', imageResponse.status, imageResponse.statusText)
       return NextResponse.json({ 
         success: false, 
-        error: `Image not accessible (${imageResponse.status}: ${imageResponse.statusText}). Check S3 bucket permissions.` 
+        error: `Image not accessible (${imageResponse.status}: ${imageResponse.statusText}). Check Google Cloud Storage bucket permissions.` 
       }, { status: 400 })
     }
 

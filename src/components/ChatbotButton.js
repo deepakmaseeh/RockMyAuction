@@ -2,6 +2,9 @@
 import { useState, useRef, useEffect } from "react";
 
 export default function ChatbotButton({ onClick, isOpen }) {
+  // Client-side only state to prevent hydration errors
+  const [isClient, setIsClient] = useState(false);
+  
   // Position and dragging state
   const [position, setPosition] = useState({ x: 24, y: 24 });
   const [isDragging, setIsDragging] = useState(false);
@@ -11,8 +14,15 @@ export default function ChatbotButton({ onClick, isOpen }) {
   const buttonRef = useRef(null);
   const dragThreshold = 5;
 
-  // Initialize position on mount
+  // Set isClient to true only on client-side
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Initialize position on mount (client-side only)
+  useEffect(() => {
+    if (!isClient || typeof window === 'undefined') return;
+
     const updateInitialPosition = () => {
       setPosition({
         x: window.innerWidth - 80,
@@ -23,7 +33,7 @@ export default function ChatbotButton({ onClick, isOpen }) {
     updateInitialPosition();
     window.addEventListener('resize', updateInitialPosition);
     return () => window.removeEventListener('resize', updateInitialPosition);
-  }, []);
+  }, [isClient]);
 
   // Mouse down handler - Start dragging
   const handleMouseDown = (e) => {
@@ -80,6 +90,11 @@ export default function ChatbotButton({ onClick, isOpen }) {
   const handleContextMenu = (e) => {
     e.preventDefault();
   };
+
+  // Don't render until client-side to prevent hydration mismatch
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <button

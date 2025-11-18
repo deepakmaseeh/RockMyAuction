@@ -1,5 +1,3 @@
-
-
 import Image from 'next/image'
 import Link from 'next/link'
 import WishlistButton from './WishlistButton'
@@ -17,6 +15,22 @@ export default function AuctionCard({
   auctionId,
   onClick 
 }) {
+  const getSeller = () => {
+    // Try seller first, then createdBy, then fallback
+    return auction?.seller?.name || auction?.createdBy?.name || 'Unknown Seller'
+  }
+
+  const getSellerAvatar = () => {
+    // Try seller first, then createdBy
+    return auction?.seller?.avatar || auction?.createdBy?.avatar || null
+  }
+
+  const getSellerInitial = () => {
+    const sellerName = getSeller()
+    if (!sellerName || sellerName === 'Unknown Seller') return '?'
+    return sellerName.charAt(0).toUpperCase()
+  }
+
   return (
     <div className={`bg-[#18181B] rounded-xl shadow-lg overflow-hidden flex flex-col hover:scale-105 transform transition ${type === 'ended' ? 'opacity-70' : ''}`}>
       <div className="relative w-full h-48">
@@ -29,12 +43,12 @@ export default function AuctionCard({
         
         {/* ✅ Pass full auction object to WishlistButton */}
         {(auction || auctionId) && (
-          <div className="absolute top-2 right-2">
-            {/* <WishlistButton 
+          <div className="absolute top-2 right-2 z-10">
+            <WishlistButton 
               auction={auction} 
-              auctionId={auctionId}
+              auctionId={auctionId || auction?._id || auction?.id}
               size="sm" 
-            /> */}
+            />
           </div>
         )}
         
@@ -53,6 +67,38 @@ export default function AuctionCard({
         <p className="text-sm text-gray-400 mb-4 flex-1 line-clamp-3">
           Current Bid: <span className="text-orange-400 font-bold">${currentBid?.toLocaleString()}</span>
         </p>
+        
+        {/* Seller Info with Profile Photo */}
+        {auction && (
+          <div className="flex items-center gap-2 mb-4">
+            {getSellerAvatar() ? (
+              <div className="relative w-6 h-6 flex-shrink-0">
+                <img
+                  src={getSellerAvatar()}
+                  alt={getSeller()}
+                  className="w-full h-full rounded-full object-cover border border-orange-500/30"
+                  onError={(e) => {
+                    // Hide image and show initial fallback
+                    e.target.style.display = 'none'
+                    const fallback = e.target.parentElement.querySelector('.avatar-fallback')
+                    if (fallback) fallback.style.display = 'flex'
+                  }}
+                />
+                <div 
+                  className="avatar-fallback w-full h-full bg-orange-500 rounded-full items-center justify-center text-white text-xs font-bold hidden"
+                >
+                  {getSellerInitial()}
+                </div>
+              </div>
+            ) : (
+              <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                {getSellerInitial()}
+              </div>
+            )}
+            <span className="text-xs text-gray-300 truncate font-medium">{getSeller()}</span>
+          </div>
+        )}
+        
         <div className="flex justify-between items-center mb-4 text-xs text-gray-500">
           <span>{users} bidder{users !== 1 ? 's' : ''}</span>
           <span>Ends: {endTime}</span>

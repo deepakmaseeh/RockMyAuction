@@ -78,7 +78,8 @@ export default function HomePage() {
         setLoadingLive(true)
         setLoadingCategories(true)
         const data = await auctionAPI.getAuctions()
-        const list = Array.isArray(data) ? data : data.auctions || []
+        // Handle both array format and object with data property (backend returns {success: true, data: [...], pagination: {...}})
+        const list = Array.isArray(data) ? data : (data.data || data.auctions || [])
         
         console.log('📊 Total auctions fetched:', list.length)
         

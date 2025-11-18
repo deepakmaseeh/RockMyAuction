@@ -50,74 +50,39 @@ export function useAuction(id) {
 }
 
 export function useUserBids(userId) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchBids() {
-      try {
-        const response = await fetch(`/api/user/bids?userId=${userId}`)
-        const data = await response.json()
-        setData(data)
-      } catch (error) {
-        console.error('Failed to fetch bids:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (userId) fetchBids()
-  }, [userId])
-
-  return { data, loading }
+  return useAPI(() => auctionAPI.getUserBids(userId), [userId])
 }
 
 export function useWatchlist(userId) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchWatchlist() {
-      try {
-        const response = await fetch(`/api/user/watchlist?userId=${userId}`)
-        const data = await response.json()
-        setData(data)
-      } catch (error) {
-        console.error('Failed to fetch watchlist:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (userId) fetchWatchlist()
-  }, [userId])
-
-  return { data, loading }
+  // Watchlist is the same as wishlist
+  return useAPI(() => auctionAPI.getWishlist(), [userId])
 }
 
 export function useSellerAnalytics(userId) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchAnalytics() {
-      try {
-        const response = await fetch(`/api/seller/analytics?userId=${userId}`)
-        const data = await response.json()
-        setData(data)
-      } catch (error) {
-        console.error('Failed to fetch analytics:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (userId) fetchAnalytics()
-  }, [userId])
-
-  return { data, loading }
+  return useAPI(() => auctionAPI.getSellerAnalytics(userId), [userId])
 }
 
-export function useEarnings(userId) {
-  return useAPI(() => auctionAPI.getEarnings(userId), [userId])
+// Additional hooks for other resources
+export function useCatalogues(params = {}) {
+  return useAPI(() => auctionAPI.getCatalogues(params), [JSON.stringify(params)])
+}
+
+export function useCatalogue(id) {
+  return useAPI(() => auctionAPI.getCatalogue(id), [id])
+}
+
+export function useLots(params = {}) {
+  return useAPI(() => auctionAPI.getLots(params), [JSON.stringify(params)])
+}
+
+export function useLot(lotId) {
+  return useAPI(() => auctionAPI.getLot(lotId), [lotId])
+}
+
+export function useWishlist(checkAuctionId = null) {
+  return useAPI(() => auctionAPI.getWishlist(checkAuctionId), [checkAuctionId])
+}
+
+export function useBids(auctionId) {
+  return useAPI(() => auctionAPI.getBids(auctionId), [auctionId])
 }
