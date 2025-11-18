@@ -5,22 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useUserRole } from '@/contexts/RoleContext'
 import { sampleData } from '@/lib/formAutoFill'
 
-// Helper function to get or create default user ID
-function getDefaultUserId() {
-  let defaultUserId = localStorage.getItem('default-user-id')
-  if (!defaultUserId) {
-    // Create a default user ID if none exists
-    defaultUserId = 'default-user-' + Date.now()
-    localStorage.setItem('default-user-id', defaultUserId)
-    localStorage.setItem('user-data', JSON.stringify({
-      id: defaultUserId,
-      name: 'Demo User',
-      email: 'demo@example.com'
-    }))
-    localStorage.setItem('auth-token', 'demo-token')
-  }
-  return defaultUserId
-}
+// No demo user - require real authentication
 
 export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
   const router = useRouter()
@@ -111,8 +96,12 @@ export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
     setSuccess('')
 
     try {
-      // Get current user ID from context or create default
-      const currentUserId = userId || getDefaultUserId()
+      // Require real authentication - no demo users
+      if (!userId || !user) {
+        setError('You must be logged in to create a catalogue. Please login first.')
+        setSubmitting(false)
+        return
+      }
 
       const catalogueData = {
         title: title.trim(),
@@ -121,7 +110,7 @@ export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
         auctionDate,
         location: location.trim(),
         status,
-        createdBy: currentUserId
+        createdBy: userId
       }
 
       const url = catalogueId ? `/api/catalogues/${catalogueId}` : '/api/catalogues'
@@ -138,7 +127,9 @@ export default function CatalogueBuilder({ catalogueId, onSave, onCancel }) {
       const data = await response.json()
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to save catalogue')
+        // Handle both error formats
+        const errorMessage = data.error || data.message || 'Failed to save catalogue';
+        throw new Error(errorMessage);
       }
 
       setSuccess('Catalogue saved successfully!')

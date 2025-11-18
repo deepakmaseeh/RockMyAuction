@@ -1,14 +1,20 @@
-const PRODUCTION_API_URL = 'https://excellwebsolution.com';
-const API_BASE_URL = PRODUCTION_API_URL;
+// Use Next.js API routes (which proxy to backend)
+// In browser, use relative URLs to hit Next.js API routes
+// Next.js API routes will proxy to backend Express server
+const API_BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
 
 class AuctionAPI {
   constructor() {
+    // Use empty string for browser (relative URLs), backend URL for server-side
     this.baseURL = API_BASE_URL;
     this.timeout = 30000;
   }
 
   async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
+    // Use Next.js API routes for browser requests (they proxy to backend)
+    const url = typeof window !== 'undefined' 
+      ? endpoint // Use relative URL in browser (hits Next.js API route)
+      : `${this.baseURL}${endpoint}`; // Use full URL for server-side
 
     console.log('🚀 API Request:', {
       method: options.method || 'GET',
@@ -16,14 +22,23 @@ class AuctionAPI {
       body: options.body,
     });
 
+    // Check if body is FormData - if so, don't set Content-Type (let browser set it with boundary)
+    const isFormData = options.body instanceof FormData;
+    
     const config = {
       headers: {
-        'Content-Type': 'application/json',
+        // Only set Content-Type if it's not FormData and not explicitly undefined
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         Accept: 'application/json',
         ...options.headers,
       },
       ...options,
     };
+
+    // If Content-Type is explicitly undefined in options.headers, remove it
+    if (options.headers && options.headers['Content-Type'] === undefined) {
+      delete config.headers['Content-Type'];
+    }
 
     // Attach token if available
     const token = this.getAuthToken();
@@ -59,6 +74,25 @@ class AuctionAPI {
         error: error.message,
       });
       throw this.createApiError(error);
+    }
+  }
+
+  getAuthToken() {
+    return typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null;
+  }
+
+  createApiError(error) {
+    const apiError = new Error(error.message);
+    apiError.isNetworkError = true;
+    return apiError;
+  }
+
+  handleUnauthorized() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth-token');
+      localStorage.removeItem('user-data');
+      // Optionally redirect to login page
+      // window.location.href = '/login';
     }
   }
 
@@ -102,125 +136,6 @@ class AuctionAPI {
     }
   }
 
-  handleUnauthorized() {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth-token');
-      localStorage.removeItem('refresh-token');
-      localStorage.removeItem('user-data');
-      localStorage.removeItem('accessToken');
-
-      if (
-        !window.location.pathname.includes('/login') &&
-        !window.location.pathname.includes('/signup')
-      ) {
-        window.location.href = '/login';
-      }
-    }
-  }
-
-  getAuthToken() {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('auth-token') || localStorage.getItem('accessToken');
-  }
-
-  createApiError(error) {
-    return {
-      message: error.message || 'An unexpected error occurred',
-      type: 'API_ERROR',
-      timestamp: new Date().toISOString(),
-      isNetworkError:
-        error.message.includes('Failed to fetch') ||
-        error.message.includes('ERR_FAILED') ||
-        error.message.includes('CORS') ||
-        error.message.includes('net::ERR_'),
-    };
-  }
-
-  // ✅ FIXED: Registration method
-  async register(userData) {
-    try {
-      console.log('📝 Registering user:', { email: userData.email, name: userData.name });
-      
-      const requestData = {
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-      };
-
-      console.log('📤 Sending registration request:', requestData);
-
-      const response = await this.request('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(requestData),
-      });
-
-      if (response.token) {
-        localStorage.setItem('auth-token', response.token);
-        console.log('💾 Token stored in localStorage');
-      }
-
-      const userData_processed = {
-        id: response._id,
-        name: response.name,
-        email: response.email,
-      };
-      localStorage.setItem('user-data', JSON.stringify(userData_processed));
-
-      return response;
-    } catch (error) {
-      console.error('Registration failed:', error);
-      
-      if (error.isNetworkError) {
-        throw new Error('Unable to connect to the server. Please check your internet connection and try again.');
-      }
-      
-      throw error;
-    }
-  }
-
-  // ✅ FIXED: Login method
-  async login(credentials) {
-    try {
-      console.log('🔐 Logging in user:', { email: credentials.email });
-      
-      const requestData = {
-        email: credentials.email,
-        password: credentials.password,
-      };
-
-      console.log('📤 Sending login request:', requestData);
-
-      const response = await this.request('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(requestData),
-      });
-
-      if (response.token) {
-        localStorage.setItem('auth-token', response.token);
-        console.log('💾 Token stored in localStorage');
-      }
-      
-      const userData = {
-        id: response._id,
-        name: response.name,
-        email: response.email,
-      };
-      localStorage.setItem('user-data', JSON.stringify(userData));
-      
-      return {
-        ...response,
-        user: userData
-      };
-    } catch (error) {
-      console.error('Login failed:', error);
-      
-      if (error.isNetworkError) {
-        throw new Error('Unable to connect to the server. Please check your internet connection and try again.');
-      }
-      
-      throw error;
-    }
-  }
 
   async logout() {
     if (typeof window !== 'undefined') {
@@ -233,13 +148,54 @@ class AuctionAPI {
     return { success: true };
   }
 
+  // Auth endpoints
+  async login(credentials) {
+    // Backend expects { type: 'login', email, password }
+    const response = await this.request('/api/auth', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'login',
+        email: credentials.email,
+        password: credentials.password,
+      }),
+    });
+    
+    // Store token if received
+    if (response.token && typeof window !== 'undefined') {
+      localStorage.setItem('auth-token', response.token);
+    }
+    
+    return response;
+  }
+
+  async register(userData) {
+    // Backend expects { type: 'register', name, email, password, role }
+    const response = await this.request('/api/auth', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'register',
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role || 'buyer',
+      }),
+    });
+    
+    // Store token if received
+    if (response.token && typeof window !== 'undefined') {
+      localStorage.setItem('auth-token', response.token);
+    }
+    
+    return response;
+  }
+
   // Profile endpoints
   async getCurrentUser() {
-    return this.request('/api/auth/profile');
+    return this.request('/api/auth/me');
   }
 
   async updateUserProfile(userData) {
-    return this.request('/api/auth/profile', {
+    return this.request('/api/auth/update', {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
@@ -251,87 +207,7 @@ class AuctionAPI {
     });
   }
 
-  // ✅ NEW: WISHLIST METHODS
-  async getWishlist() {
-    return this.request('/api/wishlist', {
-      method: 'GET',
-    });
-  }
-
-  async addToWishlist(auctionId) {
-    return this.request('/api/wishlist', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ auctionId }),
-    });
-  }
-
-  async removeFromWishlist(auctionId) {
-    return this.request(`/api/wishlist/${auctionId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async isInWishlist(auctionId) {
-    return this.request(`/api/wishlist/check/${auctionId}`, {
-      method: 'GET',
-    });
-  }
-
-  // Wallet endpoints
-  async getWallet() {
-    return this.request('/api/wallet', {
-      method: 'GET',
-    });
-  }
-
-  async getWalletTransactions(params = {}) {
-    const queryParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) queryParams.set(key, value);
-    });
-    return this.request(`/api/wallet/transactions${queryParams.toString() ? `?${queryParams}` : ''}`, {
-      method: 'GET',
-    });
-  }
-
-  async addMoney(amount, paymentMethod) {
-    return this.request('/api/wallet/add', {
-      method: 'POST',
-      body: JSON.stringify({ amount, paymentMethod }),
-    });
-  }
-
-  async withdrawMoney(amount, withdrawalMethod) {
-    return this.request('/api/wallet/withdraw', {
-      method: 'POST',
-      body: JSON.stringify({ amount, withdrawalMethod }),
-    });
-  }
-
-  async getPaymentMethods() {
-    return this.request('/api/wallet/payment-methods', {
-      method: 'GET',
-    });
-  }
-
   // Auction endpoints
-  async getAuctions(params = {}) {
-    const queryParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) queryParams.set(key, value);
-    });
-    const response = await this.request(`/api/auctions${queryParams.toString() ? `?${queryParams}` : ''}`);
-    console.log('getAuctions response:', response);
-    return response;
-  }
-
-  async getAuction(id) {
-    return this.request(`/api/auctions/${id}`);
-  }
-
   async createAuction(auctionData) {
     return this.request('/api/auctions', {
       method: 'POST',
@@ -339,34 +215,12 @@ class AuctionAPI {
     });
   }
 
-  // ✅ NEW: Create auction with image file
-  async createAuctionWithImage(formData) {
-    const token = this.getAuthToken();
-    
-    const response = await fetch(`${this.baseURL}/api/auctions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        // Don't set Content-Type for FormData - browser will set it with boundary
-      },
-      body: formData,
-    });
+  async getAuctions(query = '') {
+    return this.request(`/api/auctions${query}`);
+  }
 
-    console.log('📡 API Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.url,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Backend error response:', errorText);
-      throw new Error(`Failed to create auction: ${response.status} - ${errorText}`);
-    }
-
-    const result = await response.json();
-    console.log('✅ Auction created successfully:', result);
-    return result;
+  async getAuctionById(id) {
+    return this.request(`/api/auctions/${id}`);
   }
 
   async updateAuction(id, auctionData) {
@@ -382,52 +236,88 @@ class AuctionAPI {
     });
   }
 
-  // Bidding endpoints
-  async placeBid(bidData) {
-    return this.request('/api/bids', {
+  // Bid endpoints
+  async placeBid(auctionId, bidAmount) {
+    return this.request(`/api/auctions/${auctionId}/bids`, {
       method: 'POST',
-      body: JSON.stringify({
-        auctionId: bidData.auctionId,
-        bidAmount: bidData.bidAmount || bidData.amount,
-      }),
+      body: JSON.stringify({ amount: bidAmount }),
     });
   }
 
-  async getBids(auctionId) {
-    return this.request(`/api/bids/${auctionId}`);
+  async getBidsForAuction(auctionId) {
+    return this.request(`/api/auctions/${auctionId}/bids`);
   }
 
-  // AI endpoints
-  async generateAIContent(prompt) {
-    return this.request('/api/ai/generate', {
+  // Wishlist endpoints
+  async addToWishlist(auctionId) {
+    return this.request(`/api/wishlist/${auctionId}`, {
       method: 'POST',
-      body: JSON.stringify({ prompt }),
     });
   }
 
-  // User management endpoints
-  async getAllUsers() {
-    return this.request('/api/users', {
-      method: 'GET',
-    });
-  }
-
-  async blockUser(userId) {
-    return this.request(`/api/users/${userId}/block`, {
-      method: 'PUT',
-    });
-  }
-
-  async deactivateUser(userId) {
-    return this.request(`/api/users/${userId}/deactivate`, {
-      method: 'PUT',
-    });
-  }
-
-  async deleteUser(userId) {
-    return this.request(`/api/users/${userId}`, {
+  async removeFromWishlist(auctionId) {
+    return this.request(`/api/wishlist/${auctionId}`, {
       method: 'DELETE',
     });
+  }
+
+  async getWishlist() {
+    return this.request('/api/wishlist');
+  }
+
+  // Review endpoints
+  async createReview(auctionId, reviewData) {
+    return this.request(`/api/auctions/${auctionId}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify(reviewData),
+    });
+  }
+
+  async getReviewsForAuction(auctionId) {
+    return this.request(`/api/auctions/${auctionId}/reviews`);
+  }
+
+  async deleteReview(auctionId, reviewId) {
+    return this.request(`/api/auctions/${auctionId}/reviews/${reviewId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin endpoints
+  async getAdminAuctions() {
+    return this.request('/api/admin/auctions');
+  }
+
+  async getSellerAuctions(sellerId) {
+    return this.request(`/api/users/${sellerId}/auctions`);
+  }
+
+  async uploadImage(imageFile) {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    // Use Next.js API route for upload (which proxies to backend)
+    // In browser, use relative URL to hit Next.js API route
+    const url = typeof window !== 'undefined' 
+      ? '/api/upload' // Use relative URL in browser (hits Next.js API route)
+      : `${this.baseURL}/api/upload`; // Use full URL for server-side
+    const token = this.getAuthToken();
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type - let browser set it automatically with boundary
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(errorData.message || errorData.error || 'Upload failed');
+    }
+    
+    return await response.json();
   }
 }
 

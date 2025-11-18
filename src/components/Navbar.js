@@ -1,12 +1,64 @@
 "use client"; // Add this line at the top
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUserRole } from "@/contexts/RoleContext";
 
 export default function Navbar() {
-  const { user, logout, isAuthenticated } = useUserRole();
+  const { user, logout, isAuthenticated, loading } = useUserRole();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Debug: Log auth state in Navbar and re-check if needed
+  useEffect(() => {
+    console.log('🔍 Navbar - Auth state:', {
+      isAuthenticated,
+      hasUser: !!user,
+      userName: user?.name,
+      userEmail: user?.email,
+      userId: user?.id || user?._id,
+      loading,
+      token: typeof window !== 'undefined' ? localStorage.getItem('auth-token')?.substring(0, 20) + '...' : null,
+      userData: typeof window !== 'undefined' ? localStorage.getItem('user-data') : null
+    });
+    
+    // If not authenticated but token exists in localStorage, re-check
+    if (!loading && !isAuthenticated && typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth-token');
+      const userData = localStorage.getItem('user-data');
+      if (token && userData && token.trim() !== '' && token !== 'demo-token') {
+        console.log('⚠️ Navbar: Token exists but not authenticated - triggering re-check');
+        // Trigger storage event to force RoleContext to re-check
+        window.dispatchEvent(new Event('localStorageChange'));
+      }
+    }
+  }, [isAuthenticated, user, loading]);
+  
+  // Listen for storage changes (login from other tabs/windows or same window)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      console.log('🔄 Navbar: Storage changed:', e.key);
+      // Force a small delay to allow RoleContext to update first
+      setTimeout(() => {
+        console.log('🔄 Navbar: Re-checking auth after storage change');
+      }, 100);
+    };
+    
+    const handleCustomStorageChange = () => {
+      console.log('🔄 Navbar: Custom storage event triggered');
+      // Force a small delay to allow RoleContext to update first
+      setTimeout(() => {
+        console.log('🔄 Navbar: Re-checking auth after custom storage event');
+      }, 100);
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('localStorageChange', handleCustomStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('localStorageChange', handleCustomStorageChange);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -55,7 +107,7 @@ export default function Navbar() {
             >
               Categories
             </Link> */}
-            {isAuthenticated && (
+            {!loading && isAuthenticated && user && (
               <>
                 <Link
                   href="/dashboard"
@@ -63,7 +115,7 @@ export default function Navbar() {
                 >
                   Dashboard
                 </Link>
-                {user?.role === 'admin' && (
+                {user.role === 'admin' && (
                   <Link
                     href="/admin"
                     className="text-gray-300 hover:text-orange-400 transition text-sm lg:text-base"
@@ -85,11 +137,17 @@ export default function Navbar() {
               Help
             </Link>
 
-            {isAuthenticated ? (
+            {loading ? (
+              // Show loading state while checking auth
+              <div className="flex items-center gap-3 lg:gap-4">
+                <span className="text-gray-400 text-sm lg:text-base">Loading...</span>
+              </div>
+            ) : isAuthenticated && user && user.name ? (
+              // Show user info and logout if authenticated
               <>
                 <div className="flex items-center gap-3 lg:gap-4">
                   <span className="text-gray-400 text-sm lg:text-base">
-                    Welcome, {user?.name}
+                    Welcome, {user.name}
                   </span>
                   <button
                     onClick={handleLogout}
@@ -100,6 +158,7 @@ export default function Navbar() {
                 </div>
               </>
             ) : (
+              // Show login/signup only if NOT authenticated (after loading is complete)
               <div className="flex items-center gap-3 lg:gap-4">
                 <Link
                   href="/login"
@@ -176,7 +235,7 @@ export default function Navbar() {
                 Catalogs
               </Link>
 
-              {isAuthenticated && (
+              {!loading && isAuthenticated && user && (
                 <>
                   <Link
                     href="/dashboard"
@@ -185,7 +244,7 @@ export default function Navbar() {
                   >
                     Dashboard
                   </Link>
-                  {user?.role === 'admin' && (
+                  {user.role === 'admin' && (
                     <Link
                       href="/admin"
                       className="text-gray-300 hover:text-orange-400 transition py-2 text-base"
@@ -208,11 +267,11 @@ export default function Navbar() {
               >
                 Help
               </Link>
-              {isAuthenticated ? (
+              {!loading && isAuthenticated && user && user.name ? (
                 <>
                   <div className="py-2 border-t border-[#232326] mt-2 pt-4">
                     <span className="text-gray-400 text-sm block mb-3">
-                      Welcome, {user?.name}
+                      Welcome, {user.name}
                     </span>
                     <button
                       onClick={() => {
@@ -225,7 +284,7 @@ export default function Navbar() {
                     </button>
                   </div>
                 </>
-              ) : (
+              ) : !loading ? (
                 <div className="pt-2 border-t border-[#232326] mt-2 space-y-3">
                   <Link
                     href="/login"
@@ -241,6 +300,10 @@ export default function Navbar() {
                   >
                     Sign Up
                   </Link>
+                </div>
+              ) : (
+                <div className="pt-2 border-t border-[#232326] mt-2">
+                  <span className="text-gray-400 text-sm">Loading...</span>
                 </div>
               )}
             </div>

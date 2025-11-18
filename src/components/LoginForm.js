@@ -49,16 +49,82 @@ export default function LoginPage() {
       console.log('✅ Login successful:', response)
 
       // Update context with user data
-      if (login) {
-        login({
-          id: response.user?.id || response.id,
-          name: response.user?.name || response.name || 'User',
-          email: response.user?.email || response.email || credentials.email,
-          role: response.user?.role || response.role || 'buyer'
+      console.log('📦 Full login response:', JSON.stringify(response, null, 2))
+      
+      if (login && response && response.user) {
+        // CRITICAL: Verify token is in response and store it FIRST
+        const token = response.token || localStorage.getItem('auth-token')
+        
+        if (!token || token.trim() === '') {
+          console.error('❌ No token received from login response!', response)
+          throw new Error('Login failed: No authentication token received')
+        }
+        
+        // Store token FIRST (in case auctionAPI.login didn't store it)
+        localStorage.setItem('auth-token', token)
+        console.log('🔑 Token stored in localStorage:', {
+          success: true,
+          length: token.length,
+          prefix: token.substring(0, 20) + '...',
+          verified: localStorage.getItem('auth-token') === token
+        })
+        
+        // Backend returns _id, convert it to id for frontend
+        const userId = response.user._id || response.user.id
+        const userData = {
+          id: userId,
+          _id: userId, // Also store _id for compatibility
+          name: response.user.name || 'User',
+          email: response.user.email || credentials.email,
+          role: response.user.role || 'buyer'
+        }
+        
+        console.log('👤 Prepared userData:', userData)
+        
+        // Store user data in localStorage
+        const userDataString = JSON.stringify(userData)
+        localStorage.setItem('user-data', userDataString)
+        console.log('💾 Stored user-data in localStorage:', userDataString)
+        
+        // Double-check everything is stored correctly
+        const storedToken = localStorage.getItem('auth-token')
+        const storedData = localStorage.getItem('user-data')
+        console.log('✅ Verification after storage:', {
+          hasToken: !!storedToken && storedToken === token,
+          hasUserData: !!storedData,
+          userDataMatches: storedData === userDataString
+        })
+        
+        // Update context - this should trigger re-render of Navbar
+        console.log('🔄 Updating context with user data:', userData)
+        login(userData)
+        
+        // Wait a bit to ensure context state updates and localStorage is persisted
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Final verification before redirect
+        const finalTokenCheck = localStorage.getItem('auth-token')
+        const finalUserCheck = localStorage.getItem('user-data')
+        console.log('🔍 Final verification before redirect:', {
+          tokenStillThere: !!finalTokenCheck && finalTokenCheck === token,
+          userDataStillThere: !!finalUserCheck
+        })
+        
+        // Force page reload to ensure Navbar shows updated state
+        console.log('🚀 Redirecting to dashboard with page reload...')
+        window.location.href = '/dashboard'
+        return
+      } else {
+        console.error('❌ Invalid login response:', {
+          hasLogin: !!login,
+          hasResponse: !!response,
+          hasUser: !!(response && response.user),
+          response
         })
       }
       
-      // Redirect to dashboard
+      // Fallback: Redirect to dashboard
+      console.log('🚀 Redirecting to dashboard...')
       router.push('/dashboard')
 
     } catch (error) {
@@ -142,13 +208,6 @@ export default function LoginPage() {
               Create one
             </Link>
           </p>
-        </div>
-
-        {/* Test Data Helper (Remove in production) */}
-        <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
-          <p className="text-xs text-gray-500 mb-2">Test credentials:</p>
-          <p className="text-xs text-gray-400">Email: test@example.com</p>
-          <p className="text-xs text-gray-400">Password: test123</p>
         </div>
       </div>
     </div>

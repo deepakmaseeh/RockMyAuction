@@ -173,49 +173,61 @@ export default function AddNewAuctionForm() {
       try {
         console.log('🚀 Starting image upload and AI analysis...')
 
-        // 1. Get pre-signed URL from S3 upload API
-        console.log('📤 Getting presigned URL...')
-        const presignedResponse = await fetch('/api/s3-upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            fileName: file.name, 
-            fileType: file.type 
-          }),
+        // 1. Upload image file directly to backend (which uploads to GCS)
+        console.log('📤 Uploading image to backend/GCS...')
+        const formData = new FormData()
+        formData.append('image', file)
+        formData.append('type', 'auctions') // Specify this is for auction images (saves to auctions/ folder in GCS)
+
+        // Get auth token from localStorage
+        const authToken = localStorage.getItem('auth-token')
+        console.log('🔑 Auth token check:', {
+          available: !!authToken,
+          length: authToken ? authToken.length : 0,
+          prefix: authToken ? authToken.substring(0, 20) + '...' : 'none',
+          fullToken: authToken // Log full token for debugging (remove in production)
         })
 
-        if (!presignedResponse.ok) {
-          const errorText = await presignedResponse.text()
-          console.error('❌ Presigned URL error:', errorText)
-          throw new Error(`Failed to get upload URL: ${errorText}`)
+        if (!authToken || authToken.trim() === '') {
+          const errorMsg = 'Authentication required. Please login and try again.'
+          console.error('❌ No auth token found!', {
+            hasToken: !!authToken,
+            tokenValue: authToken,
+            localStorage: typeof window !== 'undefined' ? Object.keys(localStorage) : []
+          })
+          throw new Error(errorMsg)
         }
 
-        const { url, key, fileUrl } = await presignedResponse.json()
-
-        if (!url || !fileUrl) {
-          throw new Error('Invalid response from upload service')
-        }
-
-        console.log('📤 Uploading to S3:', { key, fileUrl })
-
-        // 2. Upload image directly to S3
-        const uploadResponse = await fetch(url, {
-          method: 'PUT',
-          body: file,
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          // Don't set Content-Type - let browser set it with boundary for multipart/form-data
           headers: {
-            'Content-Type': file.type,
+            'Authorization': `Bearer ${authToken}`, // Always include if we got this far
           },
+          body: formData,
         })
 
         if (!uploadResponse.ok) {
-          throw new Error(`Failed to upload image to S3: ${uploadResponse.status} ${uploadResponse.statusText}`)
+          const errorText = await uploadResponse.text()
+          console.error('❌ Upload error:', errorText)
+          let errorData
+          try {
+            errorData = JSON.parse(errorText)
+          } catch (e) {
+            errorData = { message: errorText }
+          }
+          throw new Error(errorData.error || errorData.message || `Failed to upload image: ${uploadResponse.status} ${uploadResponse.statusText}`)
         }
 
-        // Store the S3 URL for database storage
-        setImageUrl(fileUrl)
-        console.log('✅ Image uploaded successfully:', fileUrl)
+        const { publicUrl, dest } = await uploadResponse.json()
+
+        if (!publicUrl) {
+          throw new Error('Invalid response from upload service - no publicUrl returned')
+        }
+
+        // Store the public URL for database storage
+        setImageUrl(publicUrl)
+        console.log('✅ Image uploaded successfully:', publicUrl)
 
         // 3. Call AI analysis with the uploaded image
         console.log('🤖 Starting AI analysis...')
@@ -225,8 +237,8 @@ export default function AddNewAuctionForm() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ 
-            imageKey: key, 
-            imageUrl: fileUrl 
+            imageKey: dest, 
+            imageUrl: publicUrl 
           }),
         })
 
@@ -404,44 +416,38 @@ export default function AddNewAuctionForm() {
       console.log('🚀 Validating form...')
       validateForm()
 
-      // ✅ Compress image before sending
-      let imageToSend = image
-      if (image && image.size > 1024 * 1024) { // If larger than 1MB
-        console.log('📦 Compressing image...')
-        imageToSend = await compressImage(image, 800, 0.7)
-        console.log(`📦 Compressed from ${(image.size / 1024 / 1024).toFixed(2)}MB to ${(imageToSend.size / 1024 / 1024).toFixed(2)}MB`)
+      // ✅ Image should already be uploaded to GCS and imageUrl should be set
+      if (!imageUrl) {
+        throw new Error('Please upload an image first before creating the auction.')
       }
 
-      // Create FormData to send image file + auction data
-      const formData = new FormData()
-      
-      // Add all the auction fields
-      formData.append('title', title.trim())
-      formData.append('description', description.trim())
-      formData.append('startingPrice', parseFloat(startingBid))
-      formData.append('endDate', new Date(endTime).toISOString())
-      formData.append('category', category)
+      console.log('📤 Creating auction with image URL from GCS:', imageUrl)
+
+      // Create auction data object with imageUrl (not the file)
+      const auctionData = {
+        title: title.trim(),
+        description: description.trim(),
+        startingPrice: parseFloat(startingBid),
+        endTime: new Date(endTime).toISOString(),
+        category,
+        imageUrl, // Use the GCS URL that was already uploaded
+      }
       
       // Add optional fields if they have values
       if (startTime) {
-        formData.append('startDate', new Date(startTime).toISOString())
+        auctionData.startTime = new Date(startTime).toISOString()
       }
       if (quantity) {
-        formData.append('quantity', parseInt(quantity) || 1)
+        auctionData.quantity = parseInt(quantity) || 1
       }
       if (reservePrice) {
-        formData.append('reservePrice', parseFloat(reservePrice))
-      }
-      
-      // Add the compressed image file
-      if (imageToSend) {
-        formData.append('image', imageToSend, 'image.jpg')
+        auctionData.reservePrice = parseFloat(reservePrice)
       }
 
-      console.log('📤 Creating auction with compressed FormData...')
+      console.log('📦 Auction data to send:', { ...auctionData, imageUrl: imageUrl.substring(0, 50) + '...' })
 
-      // ✅ Use auctionAPI instead of direct fetch to handle CORS
-      const response = await auctionAPI.createAuctionWithImage(formData)
+      // ✅ Use auctionAPI.createAuction to send JSON (not FormData)
+      const response = await auctionAPI.createAuction(auctionData)
       
       console.log('✅ Auction created successfully:', response)
 

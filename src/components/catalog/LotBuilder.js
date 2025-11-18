@@ -5,22 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useUserRole } from '@/contexts/RoleContext'
 import { sampleData } from '@/lib/formAutoFill'
 
-// Helper function to get or create default user ID
-function getDefaultUserId() {
-  let defaultUserId = localStorage.getItem('default-user-id')
-  if (!defaultUserId) {
-    // Create a default user ID if none exists
-    defaultUserId = 'default-user-' + Date.now()
-    localStorage.setItem('default-user-id', defaultUserId)
-    localStorage.setItem('user-data', JSON.stringify({
-      id: defaultUserId,
-      name: 'Demo User',
-      email: 'demo@example.com'
-    }))
-    localStorage.setItem('auth-token', 'demo-token')
-  }
-  return defaultUserId
-}
+// No demo user - require real authentication
 
 const categories = [
   "Electronics",
@@ -249,7 +234,12 @@ export default function LotBuilder({ lotId, catalogueId, onSave, onCancel }) {
         throw new Error('Please select a catalogue')
       }
 
-      const currentUserId = userId || getDefaultUserId()
+      // Require real authentication - no demo users
+      if (!userId || !user) {
+        setError('You must be logged in to create a lot. Please login first.')
+        setSubmitting(false)
+        return
+      }
 
       const lotData = {
         lotNumber: lotNumber.trim(),

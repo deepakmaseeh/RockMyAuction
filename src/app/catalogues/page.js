@@ -8,26 +8,9 @@ import auctionAPI from '@/lib/auctionAPI'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
-// Helper function to get or create default user ID
-function getDefaultUserId() {
-  let defaultUserId = localStorage.getItem('default-user-id')
-  if (!defaultUserId) {
-    // Create a default user ID if none exists
-    defaultUserId = 'default-user-' + Date.now()
-    localStorage.setItem('default-user-id', defaultUserId)
-    localStorage.setItem('user-data', JSON.stringify({
-      id: defaultUserId,
-      name: 'Demo User',
-      email: 'demo@example.com'
-    }))
-    localStorage.setItem('auth-token', 'demo-token')
-  }
-  return defaultUserId
-}
-
 export default function CataloguesPage() {
   const router = useRouter()
-  const { login, isAuthenticated } = useUserRole()
+  const { isAuthenticated, loading: authLoading } = useUserRole()
   const [catalogues, setCatalogues] = useState([])
   const [activeAuctions, setActiveAuctions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -36,19 +19,13 @@ export default function CataloguesPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('catalogues') // 'catalogues' or 'auctions'
 
-  // Auto-login with default user if not authenticated
+  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
-      const defaultUserId = getDefaultUserId()
-      const userData = JSON.parse(localStorage.getItem('user-data') || '{}')
-      
-      login({
-        id: defaultUserId,
-        name: userData.name || 'Demo User',
-        email: userData.email || 'demo@example.com'
-      })
+    if (!authLoading && !isAuthenticated) {
+      console.log('⚠️ Not authenticated - redirecting to login')
+      router.push('/login')
     }
-  }, [isAuthenticated, login])
+  }, [isAuthenticated, authLoading, router])
 
   useEffect(() => {
     loadCatalogues()
